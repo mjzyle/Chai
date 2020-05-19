@@ -6,33 +6,33 @@ def setup_board():
     temp = board.cells
 
     # Setup black pieces
-    temp[0][0].piece = models.Piece('B', 'R', 0, 0)
-    temp[0][1].piece = models.Piece('B', 'N', 0, 1)
-    temp[0][2].piece = models.Piece('B', 'B', 0, 2)
-    temp[0][3].piece = models.Piece('B', 'Q', 0, 3)
-    temp[0][4].piece = models.Piece('B', 'K', 0, 4)
-    temp[0][5].piece = models.Piece('B', 'B', 0, 5)
-    temp[0][6].piece = models.Piece('B', 'N', 0, 6)
-    temp[0][7].piece = models.Piece('B', 'R', 0, 7)
+    temp[7][0].piece = models.Piece('B', 'R', 0, 0, 'pieces/black_rook.png')
+    temp[7][1].piece = models.Piece('B', 'N', 0, 1, 'pieces/black_knight.png')
+    temp[7][2].piece = models.Piece('B', 'B', 0, 2, 'pieces/black_bishop.png')
+    temp[7][3].piece = models.Piece('B', 'Q', 0, 3, 'pieces/black_queen.png')
+    temp[7][4].piece = models.Piece('B', 'K', 0, 4, 'pieces/black_king.png')
+    temp[7][5].piece = models.Piece('B', 'B', 0, 5, 'pieces/black_bishop.png')
+    temp[7][6].piece = models.Piece('B', 'N', 0, 6, 'pieces/black_knight.png')
+    temp[7][7].piece = models.Piece('B', 'R', 0, 7, 'pieces/black_rook.png')
 
     for i in range(0, 8):
-        temp[1][i].piece = models.Piece('B', 'P', 1, i)
+        temp[6][i].piece = models.Piece('B', 'P', 1, i, 'pieces/black_pawn.png')
 
     # Setup white pieces
-    temp[7][0].piece = models.Piece('W', 'R', 7, 0)
-    temp[7][1].piece = models.Piece('W', 'N', 7, 1)
-    temp[7][2].piece = models.Piece('W', 'B', 7, 2)
-    temp[7][3].piece = models.Piece('W', 'Q', 7, 3)
-    temp[7][4].piece = models.Piece('W', 'K', 7, 4)
-    temp[7][5].piece = models.Piece('W', 'B', 7, 5)
-    temp[7][6].piece = models.Piece('W', 'N', 7, 6)
-    temp[7][7].piece = models.Piece('W', 'R', 7, 7)
+    temp[0][0].piece = models.Piece('W', 'R', 7, 0, 'pieces/white_rook.png')
+    temp[0][1].piece = models.Piece('W', 'N', 7, 1, 'pieces/white_knight.png')
+    temp[0][2].piece = models.Piece('W', 'B', 7, 2, 'pieces/white_bishop.png')
+    temp[0][3].piece = models.Piece('W', 'Q', 7, 3, 'pieces/white_queen.png')
+    temp[0][4].piece = models.Piece('W', 'K', 7, 4, 'pieces/white_king.png')
+    temp[0][5].piece = models.Piece('W', 'B', 7, 5, 'pieces/white_bishop.png')
+    temp[0][6].piece = models.Piece('W', 'N', 7, 6, 'pieces/white_knight.png')
+    temp[0][7].piece = models.Piece('W', 'R', 7, 7, 'pieces/white_rook.png')
 
     for i in range(0, 8):
-        temp[6][i].piece = models.Piece('W', 'P', 6, i)
+        temp[1][i].piece = models.Piece('W', 'P', 6, i, 'pieces/white_pawn.png')
 
     board.cells = temp
-    return board
+    return update_coverage(board)
 
 
 def get_legal_moves(board, x, y):
@@ -44,7 +44,7 @@ def get_legal_moves(board, x, y):
     if piece.role == 'P':
         # Determine the pawn's directionality based on its color (white is descending index, black is ascending index)
         desc = False
-        if piece.color == 'W':
+        if piece.color == 'B':
             desc = True
 
         if desc:
@@ -103,7 +103,7 @@ def get_legal_moves(board, x, y):
             elif board.cells[i][y].piece.color is piece.color:
                 break
 
-        for i in range(x-1, -1):
+        for i in reversed(range(0, x)):
             if board.cells[i][y].piece is None:
                 legal_moves.append(models.Move(x, y, i, y))
             elif board.cells[i][y].piece.color is not piece.color:
@@ -122,7 +122,7 @@ def get_legal_moves(board, x, y):
             elif board.cells[x][i].piece.color is piece.color:
                 break
 
-        for i in range(y-1, -1):
+        for i in reversed(range(0, y)):
             if board.cells[x][i].piece is None:
                 legal_moves.append(models.Move(x, y, x, i))
             elif board.cells[x][i].piece.color is not piece.color:
@@ -184,49 +184,57 @@ def get_legal_moves(board, x, y):
     # BISHOP MOVEMENT RULES
     elif piece.role == 'B':
         # Check +/+ axis
-        i = x
-        j = y
+        i = x + 1
+        j = y + 1
         while i < 8 and j < 8:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i += 1
             j += 1
 
         # Check -/- axis
-        i = x
-        j = y
+        i = x - 1
+        j = y - 1
         while i > -1 and j > -1:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i -= 1
             j -= 1
 
         # Check +/- axis
-        i = x
-        j = y
+        i = x + 1
+        j = y - 1
         while i < 8 and j > -1:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i += 1
             j -= 1
 
         # Check -/+ axis
-        i = x
-        j = y
+        i = x - 1
+        j = y + 1
         while i > -1 and j < 8:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
+                break
+            else:
                 break
             i -= 1
             j += 1
@@ -234,49 +242,57 @@ def get_legal_moves(board, x, y):
     # QUEEN MOVEMENT RULES
     elif piece.role == 'Q':
         # Check +/+ axis
-        i = x
-        j = y
+        i = x + 1
+        j = y + 1
         while i < 8 and j < 8:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i += 1
             j += 1
 
         # Check -/- axis
-        i = x
-        j = y
+        i = x - 1
+        j = y - 1
         while i > -1 and j > -1:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i -= 1
             j -= 1
 
         # Check +/- axis
-        i = x
-        j = y
+        i = x + 1
+        j = y - 1
         while i < 8 and j > -1:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
                 break
+            else:
+                break
             i += 1
             j -= 1
 
         # Check -/+ axis
-        i = x
-        j = y
+        i = x - 1
+        j = y + 1
         while i > -1 and j < 8:
             if board.cells[i][j].piece is None:
                 legal_moves.append(models.Move(x, y, i, j))
             elif board.cells[i][j].piece.color is not piece.color:
                 legal_moves.append(models.Move(x, y, i, j))
+                break
+            else:
                 break
             i -= 1
             j += 1
@@ -291,7 +307,7 @@ def get_legal_moves(board, x, y):
             elif board.cells[i][y].piece.color is piece.color:
                 break
 
-        for i in range(x-1, -1):
+        for i in reversed(range(0, x)):
             if board.cells[i][y].piece is None:
                 legal_moves.append(models.Move(x, y, i, y))
             elif board.cells[i][y].piece.color is not piece.color:
@@ -310,7 +326,7 @@ def get_legal_moves(board, x, y):
             elif board.cells[x][i].piece.color is piece.color:
                 break
 
-        for i in range(y-1, -1):
+        for i in reversed(range(0, y)):
             if board.cells[x][i].piece is None:
                 legal_moves.append(models.Move(x, y, x, i))
             elif board.cells[x][i].piece.color is not piece.color:
@@ -372,13 +388,12 @@ def get_legal_moves(board, x, y):
         # Check for castle
         # King hasn't yet moved
         if not piece.made_first_move:
-
             # Left rook hasn't yet moved
-            if board.cells[x][0].piece is not None and not board.cells[x][0].piece.made_first_move and board.cells[x][1].piece is None and board.cells[x][2].piece is None and board.cells[x][3].piece is None:
+            if board.cells[x][0].piece is not None and (not board.cells[x][0].piece.made_first_move) and board.cells[x][1].piece is None and board.cells[x][2].piece is None and board.cells[x][3].piece is None:
                 legal_moves.append(models.Move(x, y, x, y-2, models.Move(x, 0, x, y-1)))
 
             # Right rook hasn't yet moved
-            if board.cells[x][0].piece is not None and not board.cells[x][7].piece.made_first_move and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
+            if board.cells[x][0].piece is not None and (not board.cells[x][7].piece.made_first_move) and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
                 legal_moves.append(models.Move(x, y, x, y+2, models.Move(x, 7, x, y+1)))
 
 
@@ -393,29 +408,411 @@ def get_legal_moves(board, x, y):
             i += 1
 
     # Remove any king moves that would place the king in check
-    if piece.role == 'K':
-        m = 0
-        while m < len(legal_moves):
-            opponent_moves = []
-            move = legal_moves[m]
-            temp_board = perform_move(board, move)
-
-            # Determine all possible moves that the opponent could make in the event that the king makes this move
-            for i in range(0, 8):
-                for j in range(0, 8):
-                    if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not piece.color:
-                        opponent_moves += get_legal_moves(temp_board, i, j)
-
-            # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
-            for opp_move in opponent_moves:
-                if opp_move.end == move.end:
-                    legal_moves.pop(m)
-                    m -= 1
-                    break
-
-            m += 1
+#    if piece.role == 'K':
+#        m = 0
+#        while m < len(legal_moves):
+#            opponent_moves = []
+#            move = legal_moves[m]
+#            temp_board = perform_move(board, move)
+#
+#            # Determine all possible moves that the opponent could make in the event that the king makes this move
+#            for i in range(0, 8):
+#                for j in range(0, 8):
+#                    if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not piece.color:
+#                        opponent_moves += get_legal_moves(temp_board, i, j)
+#
+#            # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
+#            for opp_move in opponent_moves:
+#                if opp_move.end == move.end:
+#                    legal_moves.pop(m)
+#                    m -= 1
+#
+#            m += 1
 
     return legal_moves
+
+
+def get_cover_moves(board, x, y):
+    piece = board.cells[x][y].piece
+    cover_moves = []
+
+    # PAWN MOVEMENT RULES
+    if piece.role == 'P':
+        # Determine the pawn's directionality based on its color (white is descending index, black is ascending index)
+        desc = False
+        if piece.color == 'B':
+            desc = True
+
+        if desc:
+            try:
+                cover_moves.append(models.Move(x, y, x-1, y-1))
+            except IndexError:
+                pass
+                
+            try:
+                cover_moves.append(models.Move(x, y, x-1, y+1))
+            except IndexError:
+                pass
+
+        else:
+            try:
+                cover_moves.append(models.Move(x, y, x+1, y-1))
+            except IndexError:
+                pass
+                
+            try:
+                cover_moves.append(models.Move(x, y, x+1, y+1))
+            except IndexError:
+                pass
+
+    # ROOK MOVEMENT RULES
+    elif piece.role == 'R':
+        # Determine moves possible along x-axis
+        for i in range(x+1, 8):
+            if board.cells[i][y].piece is None:
+                cover_moves.append(models.Move(x, y, i, y))
+            else:
+                cover_moves.append(models.Move(x, y, i, y))
+                break
+
+        for i in reversed(range(0, x)):
+            if board.cells[i][y].piece is None:
+                cover_moves.append(models.Move(x, y, i, y))
+            else:
+                cover_moves.append(models.Move(x, y, i, y))
+                break
+
+        # Determine moves possible along y-axis
+        for i in range(y+1, 8):
+            if board.cells[x][i].piece is None:
+                cover_moves.append(models.Move(x, y, x, i))
+            else:
+                cover_moves.append(models.Move(x, y, x, i))
+                break
+
+        for i in reversed(range(0, y)):
+            if board.cells[x][i].piece is None:
+                cover_moves.append(models.Move(x, y, x, i))
+            else:
+                cover_moves.append(models.Move(x, y, x, i))
+                break
+
+    # KNIGHT MOVEMENT RULES
+    elif piece.role == 'N':
+        try:
+            cover_moves.append(models.Move(x, y, x+1, y+2))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x+2, y+1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-1, y-2))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-2, y-1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-2, y+1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x+2, y-1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-1, y+2))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x+1, y-2))
+        except IndexError:
+            pass
+
+    # BISHOP MOVEMENT RULES
+    elif piece.role == 'B':
+        # Check +/+ axis
+        i = x + 1
+        j = y + 1
+        while i < 8 and j < 8:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i += 1
+            j += 1
+
+        # Check -/- axis
+        i = x - 1
+        j = y - 1
+        while i > -1 and j > -1:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i -= 1
+            j -= 1
+
+        # Check +/- axis
+        i = x + 1
+        j = y - 1
+        while i < 8 and j > -1:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i += 1
+            j -= 1
+
+        # Check -/+ axis
+        i = x - 1
+        j = y + 1
+        while i > -1 and j < 8:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i -= 1
+            j += 1
+
+    # QUEEN MOVEMENT RULES
+    elif piece.role == 'Q':
+        # Check +/+ axis
+        i = x + 1
+        j = y + 1
+        while i < 8 and j < 8:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i += 1
+            j += 1
+
+        # Check -/- axis
+        i = x - 1
+        j = y - 1
+        while i > -1 and j > -1:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i -= 1
+            j -= 1
+
+        # Check +/- axis
+        i = x + 1
+        j = y - 1
+        while i < 8 and j > -1:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i += 1
+            j -= 1
+
+        # Check -/+ axis
+        i = x - 1
+        j = y + 1
+        while i > -1 and j < 8:
+            if board.cells[i][j].piece is None:
+                cover_moves.append(models.Move(x, y, i, j))
+            else:
+                cover_moves.append(models.Move(x, y, i, j))
+                break
+            i -= 1
+            j += 1
+
+        # Determine moves possible along x-axis
+        for i in range(x+1, 8):
+            if board.cells[i][y].piece is None:
+                cover_moves.append(models.Move(x, y, i, y))
+            else:
+                cover_moves.append(models.Move(x, y, i, y))
+                break
+
+        for i in reversed(range(0, x)):
+            if board.cells[i][y].piece is None:
+                cover_moves.append(models.Move(x, y, i, y))
+            else:
+                cover_moves.append(models.Move(x, y, i, y))
+                break
+
+        # Determine moves possible along y-axis
+        for i in range(y+1, 8):
+            if board.cells[x][i].piece is None:
+                cover_moves.append(models.Move(x, y, x, i))
+            else:
+                cover_moves.append(models.Move(x, y, x, i))
+                break
+
+        for i in reversed(range(0, y)):
+            if board.cells[x][i].piece is None:
+                cover_moves.append(models.Move(x, y, x, i))
+            else:
+                cover_moves.append(models.Move(x, y, x, i))
+                break
+
+    # KING MOVEMENT RULES
+    elif piece.role == 'K':
+        try:
+            cover_moves.append(models.Move(x, y, x+1, y))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x+1, y+1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x, y+1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-1, y))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-1, y-1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x, y-1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x+1, y-1))
+        except IndexError:
+            pass
+
+        try:
+            cover_moves.append(models.Move(x, y, x-1, y+1))
+        except IndexError:
+            pass
+
+
+    # Remove any moves with negative array indices
+    i = 0
+    while i < len(cover_moves):
+        move = cover_moves[i].end
+
+        if move[0] < 0 or move[1] < 0:
+            cover_moves.pop(i)
+        else:
+            i += 1
+
+    # Remove any king moves that would place the king in check
+#    if piece.role == 'K':
+#        m = 0
+#        while m < len(legal_moves):
+#            opponent_moves = []
+#            move = legal_moves[m]
+#            temp_board = perform_move(board, move)
+#
+#            # Determine all possible moves that the opponent could make in the event that the king makes this move
+#            for i in range(0, 8):
+#                for j in range(0, 8):
+#                    if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not piece.color:
+#                        opponent_moves += get_legal_moves(temp_board, i, j)
+#
+#            # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
+#            for opp_move in opponent_moves:
+#                if opp_move.end == move.end:
+#                    legal_moves.pop(m)
+#                    m -= 1
+#
+#            m += 1
+
+    return cover_moves
+
+
+def update_coverage(board):
+    new_board = board
+    cells = board.cells
+    black_moves = []
+    white_moves = []
+
+    # Reset previous coverage maps
+    for x in range(0, 8):
+        for y in range(0, 8):
+            new_board.coverage_total[x][y] = 0
+            new_board.coverage_black[x][y] = 0
+            new_board.coverage_total[x][y] = 0
+
+    # Determine all possible moves this piece can perform based on the board layout
+    for x in range(0, 8):
+        for y in range(0, 8):
+            if cells[x][y].piece is not None:
+                if cells[x][y].piece.color == 'B':
+                    black_moves += get_cover_moves(board, x, y)
+                else:
+                    white_moves += get_cover_moves(board, x, y)
+
+    # Calculate coverage scores for each cell based on moves that end at that cell
+    for x in range(0, 8):
+        for y in range(0, 8):
+            data = ['', 0]
+
+            # Add black moves that cover this cell
+            for move in black_moves:
+                if move.end == [x, y]:
+                    if data[1] == 0:
+                        data[0] = 'B'
+                        data[1] += 1
+                    elif data[0] == 'W':
+                        data[1] -= 1
+                    elif data[0] == 'B':
+                        data[1] += 1
+                    else:
+                        print('ERROR')
+
+                    if data[1] == 0:
+                        data[0] = ''
+
+                    new_board.coverage_black[x][y] += 1
+
+            # Add white moves that cover this cell
+            for move in white_moves:
+                if move.end == [x, y]:
+                    if data[1] == 0:
+                        data[0] = 'W'
+                        data[1] += 1
+                    elif data[0] == 'B':
+                        data[1] -= 1
+                    elif data[0] == 'W':
+                        data[1] += 1
+                    else:
+                        print('ERROR')
+
+                    if data[1] == 0:
+                        data[0] = ''
+
+                    new_board.coverage_white[x][y] += 1
+             
+            new_board.coverage_total[x][y] = data
+
+    return new_board
 
 
 def perform_move(board, move):
@@ -425,10 +822,15 @@ def perform_move(board, move):
     new_board = board
 
     piece = new_board.cells[start[0]][start[1]].piece
+    piece.made_first_move = True
     new_board.cells[start[0]][start[1]].piece = None
     new_board.cells[end[0]][end[1]].piece = piece
 
+    print(new_board)
+
     if special is not None:
         new_board = perform_move(new_board, special)
+
+    new_board = update_coverage(new_board)
 
     return new_board
