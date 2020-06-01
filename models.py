@@ -57,7 +57,7 @@ class Piece:
 		self.role = role
 		self.x = x
 		self.y = y
-		self.made_first_move = False
+		self.moves = 0
 		self.image = image
 
 	def __str__(self):
@@ -66,7 +66,7 @@ class Piece:
 	def update_position(self, x, y):
 		self.x = x
 		self.y = y
-		self.made_first_move = True
+		self.moves += 1
 
 
 class Move:

@@ -102,7 +102,7 @@ class ChessWidget(Widget):
 				self.current_move.end = [x, y]
 				print('Attempting move to ' + str(x) + ',' + str(y))
 				legal_moves = controller.get_legal_moves(self.b, self.current_move.start[0], self.current_move.start[1])
-				print(legal_moves)
+				legal_moves = controller.remove_check_moves(self.b, legal_moves, self.b.cells[self.current_move.start[0]][self.current_move.start[1]].piece.color)
 				for move in legal_moves:
 					if self.current_move.end == move.end:
 						self.current_move.special = move.special

@@ -1,4 +1,5 @@
 import models
+from copy import deepcopy
 
 
 def setup_board():
@@ -32,10 +33,11 @@ def setup_board():
         temp[1][i].piece = models.Piece('W', 'P', 6, i, 'pieces/white_pawn.png')
 
     board.cells = temp
+
     return update_coverage(board)
 
 
-def get_legal_moves(board, x, y):
+def get_legal_moves(board, x, y): 
     piece = board.cells[x][y].piece
     legal_moves = []
 
@@ -53,7 +55,7 @@ def get_legal_moves(board, x, y):
                 legal_moves.append(models.Move(x, y, x-1, y))
             
             # Determine if the pawn has made a first move; if not, it can move either one or two spaces
-            if not piece.made_first_move and board.cells[x-1][y].piece is None and board.cells[x-2][y].piece is None:
+            if piece.moves == 0 and board.cells[x-1][y].piece is None and board.cells[x-2][y].piece is None:
                 legal_moves.append(models.Move(x, y, x-2, y))
 
             # Determine if the pawn can capture any diagonal opponent pieces
@@ -75,7 +77,7 @@ def get_legal_moves(board, x, y):
                 legal_moves.append(models.Move(x, y, x+1, y))
             
             # Determine if the pawn has made a first move; if not, it can move either one or two spaces
-            if not piece.made_first_move and board.cells[x+1][y].piece is None and board.cells[x+2][y].piece is None:
+            if piece.moves == 0 and board.cells[x+1][y].piece is None and board.cells[x+2][y].piece is None:
                 legal_moves.append(models.Move(x, y, x+2, y))
 
             # Determine if the pawn can capture any diagonal opponent pieces
@@ -387,47 +389,26 @@ def get_legal_moves(board, x, y):
 
         # Check for castle
         # King hasn't yet moved
-        if not piece.made_first_move:
+        if piece.moves == 0:
             # Left rook hasn't yet moved
-            if board.cells[x][0].piece is not None and (not board.cells[x][0].piece.made_first_move) and board.cells[x][1].piece is None and board.cells[x][2].piece is None and board.cells[x][3].piece is None:
+            if board.cells[x][0].piece is not None and (board.cells[x][0].piece.moves == 0) and board.cells[x][1].piece is None and board.cells[x][2].piece is None and board.cells[x][3].piece is None:
                 legal_moves.append(models.Move(x, y, x, y-2, models.Move(x, 0, x, y-1)))
 
             # Right rook hasn't yet moved
-            if board.cells[x][0].piece is not None and (not board.cells[x][7].piece.made_first_move) and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
+            if board.cells[x][0].piece is not None and (board.cells[x][7].piece.moves == 0) and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
                 legal_moves.append(models.Move(x, y, x, y+2, models.Move(x, 7, x, y+1)))
 
 
-    # Remove any moves with negative array indices
+    # Remove any moves with negative array indices or indices > 7
     i = 0
     while i < len(legal_moves):
         move = legal_moves[i].end
 
-        if move[0] < 0 or move[1] < 0:
+        if move[0] < 0 or move[1] < 0 or move[0] > 7 or move[1] > 7:
             legal_moves.pop(i)
         else:
             i += 1
 
-    # Remove any king moves that would place the king in check
-#    if piece.role == 'K':
-#        m = 0
-#        while m < len(legal_moves):
-#            opponent_moves = []
-#            move = legal_moves[m]
-#            temp_board = perform_move(board, move)
-#
-#            # Determine all possible moves that the opponent could make in the event that the king makes this move
-#            for i in range(0, 8):
-#                for j in range(0, 8):
-#                    if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not piece.color:
-#                        opponent_moves += get_legal_moves(temp_board, i, j)
-#
-#            # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
-#            for opp_move in opponent_moves:
-#                if opp_move.end == move.end:
-#                    legal_moves.pop(m)
-#                    m -= 1
-#
-#            m += 1
 
     return legal_moves
 
@@ -712,39 +693,48 @@ def get_cover_moves(board, x, y):
             pass
 
 
-    # Remove any moves with negative array indices
+    # Remove any moves with negative array indices or indices > 7
     i = 0
     while i < len(cover_moves):
         move = cover_moves[i].end
 
-        if move[0] < 0 or move[1] < 0:
+        if move[0] < 0 or move[1] < 0 or move[0] > 7 or move[1] > 7:
             cover_moves.pop(i)
         else:
             i += 1
 
-    # Remove any king moves that would place the king in check
-#    if piece.role == 'K':
-#        m = 0
-#        while m < len(legal_moves):
-#            opponent_moves = []
-#            move = legal_moves[m]
-#            temp_board = perform_move(board, move)
-#
-#            # Determine all possible moves that the opponent could make in the event that the king makes this move
-#            for i in range(0, 8):
-#                for j in range(0, 8):
-#                    if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not piece.color:
-#                        opponent_moves += get_legal_moves(temp_board, i, j)
-#
-#            # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
-#            for opp_move in opponent_moves:
-#                if opp_move.end == move.end:
-#                    legal_moves.pop(m)
-#                    m -= 1
-#
-#            m += 1
 
     return cover_moves
+
+
+def remove_check_moves(board, moves, player_color):
+    legal_moves = moves
+
+    # Remove any moves that would place the king in check
+    m = 0
+    while m < len(legal_moves):
+        move = legal_moves[m]
+        temp_board = deepcopy(board)
+        temp_board = perform_move(temp_board, move)
+
+        # Determine all possible moves that the opponent could make in the event that the king makes this move
+        opponent_moves = []
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if temp_board.cells[i][j].piece is not None and temp_board.cells[i][j].piece.color is not player_color:
+                    opponent_moves += get_legal_moves(temp_board, i, j)
+
+        # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
+        for opp_move in opponent_moves:
+            print(opp_move)
+            if temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece is not None and temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece.role == 'K' and temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece.color == player_color:
+                legal_moves.pop(m)
+                m -= 1
+                break
+
+        m += 1
+
+    return legal_moves
 
 
 def update_coverage(board):
@@ -765,9 +755,9 @@ def update_coverage(board):
         for y in range(0, 8):
             if cells[x][y].piece is not None:
                 if cells[x][y].piece.color == 'B':
-                    black_moves += get_cover_moves(board, x, y)
+                    black_moves += remove_check_moves(board, get_cover_moves(board, x, y), 'B')
                 else:
-                    white_moves += get_cover_moves(board, x, y)
+                    white_moves += remove_check_moves(board, get_cover_moves(board, x, y), 'W')
 
     # Calculate coverage scores for each cell based on moves that end at that cell
     for x in range(0, 8):
@@ -819,18 +809,16 @@ def perform_move(board, move):
     start = move.start
     end = move.end
     special = move.special
+
     new_board = board
 
-    piece = new_board.cells[start[0]][start[1]].piece
-    piece.made_first_move = True
+    piece = new_board.cells[start[0]][start[1]].piece 
+    piece.moves += 1
+
     new_board.cells[start[0]][start[1]].piece = None
     new_board.cells[end[0]][end[1]].piece = piece
 
-    print(new_board)
-
     if special is not None:
         new_board = perform_move(new_board, special)
-
-    new_board = update_coverage(new_board)
 
     return new_board
