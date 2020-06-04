@@ -1,3 +1,8 @@
+import controller
+import random
+from copy import deepcopy
+
+
 class Cell:
 	def __init__(self):
 		self.piece = None
@@ -17,6 +22,7 @@ class Board:
 		self.coverage_white = []
 		self.board_size = 80
 		self.board_start = 25
+		self.in_check = ''
 
 		# Setup cells
 		for x in range(0, 8):
@@ -39,6 +45,7 @@ class Board:
 			self.coverage_total.append(row_total)
 			self.coverage_black.append(row_single)
 			self.coverage_white.append(row_single)
+
 
 	def __str__(self):
 		temp = ''
@@ -84,8 +91,21 @@ class Player:
 		self.color = color
 
 	def make_move(self, board):
-		new_board = board
+		new_board = deepcopy(board)
 
-		# PERFORM ML MAGIC
-		
-		return False, new_board
+		# Determine all legal moves
+		legal_moves = []
+
+		for x in range(0, 8):
+			for y in range(0, 8):
+				if board.cells[x][y].piece is not None and board.cells[x][y].piece.color == self.color:
+					legal_moves += controller.remove_check_moves(board, controller.get_legal_moves(board, x, y), self.color)
+					
+		# If there are moves available, make a random move; otherwise, player is in checkmate and game ends
+		if len(legal_moves) > 0:
+			index = random.randrange(0, len(legal_moves))
+			new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
+			return False, False, new_board
+
+		else:
+			return True, False, new_board

@@ -84,6 +84,7 @@ class ChessWidget(Widget):
 							pos=(700+25*y, self.b.board_start + 25*x)
 						)
 
+
 	def callback(self, x, y, event):
 		# If no move is in progress, the player has selected this piece to move; display allowable moves
 		if self.current_move is None: 
@@ -108,6 +109,10 @@ class ChessWidget(Widget):
 						self.current_move.special = move.special
 						self.b = controller.perform_move(self.b, self.current_move)
 						print('Move allowed!')
+						
+						if self.b.in_check != '':
+							print('Player ' + self.b.in_check + ' is in check!')
+
 						break
 				self.current_move = None
 

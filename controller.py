@@ -51,12 +51,18 @@ def get_legal_moves(board, x, y):
 
         if desc:
             # Determine if the pawn can move one space
-            if board.cells[x-1][y].piece is None:
-                legal_moves.append(models.Move(x, y, x-1, y))
+            try:
+                if board.cells[x-1][y].piece is None:
+                    legal_moves.append(models.Move(x, y, x-1, y))
+            except IndexError:
+                pass
             
             # Determine if the pawn has made a first move; if not, it can move either one or two spaces
-            if piece.moves == 0 and board.cells[x-1][y].piece is None and board.cells[x-2][y].piece is None:
-                legal_moves.append(models.Move(x, y, x-2, y))
+            try:
+                if piece.moves == 0 and board.cells[x-1][y].piece is None and board.cells[x-2][y].piece is None:
+                    legal_moves.append(models.Move(x, y, x-2, y))
+            except IndexError:
+                pass
 
             # Determine if the pawn can capture any diagonal opponent pieces
             try:
@@ -73,12 +79,18 @@ def get_legal_moves(board, x, y):
 
         else:
             # Determine if the pawn can move one space
-            if board.cells[x+1][y].piece is None:
-                legal_moves.append(models.Move(x, y, x+1, y))
+            try:
+                if board.cells[x+1][y].piece is None:
+                    legal_moves.append(models.Move(x, y, x+1, y))
+            except IndexError:
+                pass
             
             # Determine if the pawn has made a first move; if not, it can move either one or two spaces
-            if piece.moves == 0 and board.cells[x+1][y].piece is None and board.cells[x+2][y].piece is None:
-                legal_moves.append(models.Move(x, y, x+2, y))
+            try:
+                if piece.moves == 0 and board.cells[x+1][y].piece is None and board.cells[x+2][y].piece is None:
+                    legal_moves.append(models.Move(x, y, x+2, y))
+            except IndexError:
+                pass
 
             # Determine if the pawn can capture any diagonal opponent pieces
             try:
@@ -395,7 +407,7 @@ def get_legal_moves(board, x, y):
                 legal_moves.append(models.Move(x, y, x, y-2, models.Move(x, 0, x, y-1)))
 
             # Right rook hasn't yet moved
-            if board.cells[x][0].piece is not None and (board.cells[x][7].piece.moves == 0) and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
+            if board.cells[x][7].piece is not None and (board.cells[x][7].piece.moves == 0) and board.cells[x][6].piece is None and board.cells[x][5].piece is None:
                 legal_moves.append(models.Move(x, y, x, y+2, models.Move(x, 7, x, y+1)))
 
 
@@ -726,7 +738,6 @@ def remove_check_moves(board, moves, player_color):
 
         # If the opponent can make a legal move that would match the new location of the king, then the king's current move is illegal (remove it)
         for opp_move in opponent_moves:
-            print(opp_move)
             if temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece is not None and temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece.role == 'K' and temp_board.cells[opp_move.end[0]][opp_move.end[1]].piece.color == player_color:
                 legal_moves.pop(m)
                 m -= 1
@@ -735,6 +746,35 @@ def remove_check_moves(board, moves, player_color):
         m += 1
 
     return legal_moves
+
+
+def determine_check(board, last_player_color):
+    new_board = board
+
+    x = 0
+    while x < 8:
+        y = 0
+        while y < 8:
+            if new_board.cells[x][y].piece is not None and new_board.cells[x][y].piece.color == last_player_color:
+                # Determine piece coverage moves
+                moves = get_cover_moves(new_board, x, y)
+
+                for move in moves:
+                    if new_board.cells[move.end[0]][move.end[1]].piece is not None and new_board.cells[move.end[0]][move.end[1]].piece.color != last_player_color and new_board.cells[move.end[0]][move.end[1]].piece.role == 'K':
+                        if last_player_color == 'W':
+                            new_board.in_check = 'B'
+                        else:
+                            new_board.in_check = 'W'
+                        x = 8
+                        y = 8
+                        break
+                    else:
+                        new_board.in_check = ''
+
+            y += 1
+        x += 1
+
+    return new_board
 
 
 def update_coverage(board):
@@ -817,6 +857,16 @@ def perform_move(board, move):
 
     new_board.cells[start[0]][start[1]].piece = None
     new_board.cells[end[0]][end[1]].piece = piece
+
+    # In the event that a pawn reaches the opponent's side of the board, swap with a queen
+    if piece.role == 'P':
+        if piece.color == 'W':
+            if end[0] == 7:
+                new_board.cells[end[0]][end[1]].piece = models.Piece('W', 'Q', end[0], end[1], 'pieces/white_queen.png')
+        else:
+            if end[0] == 0:
+                new_board.cells[end[0]][end[1]].piece = models.Piece('B', 'Q', end[0], end[1], 'pieces/black_queen.png')
+
 
     if special is not None:
         new_board = perform_move(new_board, special)
