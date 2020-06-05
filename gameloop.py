@@ -37,17 +37,21 @@ def write_board_data(turn, current_player, board_start, board_end):
         'Ending Board': board_end_enc,
         'In Check' : board_end.in_check,
         'Starting Coverage' : coverage_start,
-        'Ending Coverage' : coverage_end
+        'Ending Coverage' : coverage_end,
+        'White Coverage Score': board_end.coverage_score_white,
+        'Black Coverage Score': board_end.coverage_score_black,
+        'White Piece Score' : board_end.piece_score_white,
+        'Black Piece Score' : board_end.piece_score_black
     }
 
     return data
 
 
 def play_game(data_file):
-    white = models.Player('W')
-    black = models.Player('B')
+    white = models.Player('W', 'random')
+    black = models.Player('B', 'random')
     board = controller.setup_board()
-    boards = pd.DataFrame(columns=['Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End'])
+    boards = pd.DataFrame(columns=['Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End', 'White Piece Score', 'Black Piece Score', 'White Coverage Score', 'Black Coverage Score'])
 
     current_player = 'W'
     in_progress = False
@@ -71,9 +75,10 @@ def play_game(data_file):
 
         boards = boards.append(write_board_data(turn, current_player, last_board, board), ignore_index=True)
 
-        # Check if white player has won
+        # Check if black player has won (no moves possible for white)
         if checkmate:
-            winner = 'White'
+            if board.in_check != '':
+                winner = 'Black'
             playing = False
             break
 
@@ -91,11 +96,13 @@ def play_game(data_file):
 
         boards = boards.append(write_board_data(turn, current_player, last_board, board), ignore_index=True)
 
-        # Check if black player has won
+        # Check if white player has won (no moves possible for black)
         if checkmate:
-            winner = 'Black'
+            if board.in_check != '':
+                winner = 'White'
             playing = False
             break
+
 
         # Proceed to next turn
         turn += 1
@@ -103,7 +110,9 @@ def play_game(data_file):
         # Automatic stalemate after n turns or when only two kings are left standing
         if turn > 500:
             playing = False
+            break
 
+        # Determine if play has reached a draw (only king pieces are left)
         black_pieces = 0
         white_pieces = 0
         for x in range(0, 8):
@@ -124,18 +133,20 @@ def play_game(data_file):
 
     boards.to_csv(data_file)
     print('Winner: ' + winner)
+    print('Turns: ' + str(turn))
     print(board)
 
-    return winner
+    return winner, turn
 
 master_data = pd.DataFrame(columns=['Winner'])
 start = dt.datetime.now()
 
-for i in range(0, 500):
+for i in range(0, 1):
     print('Playing game ' + str(i+1))
-    winner = play_game(r'raw_data/game_' + str(i+1) + '.csv')
+    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
     master_data = master_data.append({
-        'Winner' : winner
+        'Winner' : winner,
+        'Turns': turns
     }, ignore_index=True)
 
 end = dt.datetime.now()

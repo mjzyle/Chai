@@ -783,6 +783,15 @@ def update_coverage(board):
     black_moves = []
     white_moves = []
 
+    points = {
+        'P': 1,
+        'K': 1,
+        'R': 2,
+        'B': 3,
+        'N': 3,
+        'Q': 4
+    }
+
     # Reset previous coverage maps
     for x in range(0, 8):
         for y in range(0, 8):
@@ -841,6 +850,29 @@ def update_coverage(board):
                     new_board.coverage_white[x][y] += 1
              
             new_board.coverage_total[x][y] = data
+
+    # Get total coverage scores
+    new_board.coverage_score_white = 0
+    new_board.coverage_score_black = 0
+
+    for x in range(0, 8):
+        for y in range(0, 8):
+            if board.coverage_total[x][y][0] == 'W':
+                new_board.coverage_score_white += board.coverage_total[x][y][1]
+            elif board.coverage_total[x][y][0] == 'B':
+                new_board.coverage_score_black += board.coverage_total[x][y][1]
+
+    # Get total piece scores
+    new_board.piece_score_white = 0
+    new_board.piece_score_black = 0
+
+    for x in range(0, 8):
+        for y in range(0, 8):
+            if new_board.cells[x][y].piece is not None:
+                if new_board.cells[x][y].piece.color == 'W':
+                    new_board.piece_score_white += points[new_board.cells[x][y].piece.role]
+                elif new_board.cells[x][y].piece.color == 'B':
+                    new_board.piece_score_black += points[new_board.cells[x][y].piece.role]
 
     return new_board
 

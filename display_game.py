@@ -34,7 +34,7 @@ class ChessWidget(Widget):
     coverage_black = []
     coverage_white = []
     current_board = 0
-    data = pd.read_csv('data/game_67.csv').drop(columns='Unnamed: 0')
+    data = pd.read_csv('raw_data/game_1.csv').drop(columns='Unnamed: 0')
     check_prompt = ''
 
 
