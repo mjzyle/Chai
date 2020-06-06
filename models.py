@@ -107,21 +107,109 @@ class Player:
 
 		# Make move based on player style
 		if len(legal_moves) > 0:
+
+			# Choose a random legal move
 			if self.style == 'random':
 				index = random.randrange(0, len(legal_moves))
 				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
 			
-			elif self.style == 'offensive':
-				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
+			# Attempt to create the largest delta between player coverage scores
+			elif self.style == 'offensive_coverage':
+				best_move = None
+				best_cover_delta = -500
+
+				for move in legal_moves:
+					
+					# Perform the move on a temporary board
+					temp_board = deepcopy(new_board)
+					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(temp_board, move), self.color))
+					
+					# Calculate delta scores
+					if self.color == 'W':
+						cover_delta = temp_board.coverage_score_white - temp_board.coverage_score_black
+					else:
+						cover_delta = temp_board.coverage_score_black - temp_board.coverage_score_white
+
+					if cover_delta > best_cover_delta:
+						best_move = move
+						best_cover_delta = cover_delta
+
+				# Perform the best move
+				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, best_move), self.color))
 			
-			elif self.style == 'defensive':
-				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
+			# Attempt to create the largest delta between player piece scores
+			elif self.style == 'offensive_pieces':
+				best_move = None
+				best_piece_delta = -500
+
+				for move in legal_moves:
+					
+					# Perform the move on a temporary board
+					temp_board = deepcopy(new_board)
+					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(temp_board, move), self.color))
+					
+					# Calculate delta scores
+					if self.color == 'W':
+						piece_delta = temp_board.piece_score_white - temp_board.piece_score_black
+					else:
+						piece_delta = temp_board.piece_score_black - temp_board.piece_score_white
+
+					if piece_delta > best_piece_delta:
+						best_move = move
+						best_piece_delta = piece_delta
+
+				# Perform the best move
+				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, best_move), self.color))
 			
-			elif self.style == 'data-driven':
-				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
+			# Attempt to create the smallest delta between player coverage scores
+			elif self.style == 'defensive_coverage':
+				best_move = None
+				best_cover_delta = 500
+
+				for move in legal_moves:
+					
+					# Perform the move on a temporary board
+					temp_board = deepcopy(new_board)
+					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(temp_board, move), self.color))
+					
+					# Calculate delta scores
+					if self.color == 'W':
+						cover_delta = temp_board.coverage_score_white - temp_board.coverage_score_black
+					else:
+						cover_delta = temp_board.coverage_score_black - temp_board.coverage_score_white
+
+					if cover_delta < best_cover_delta:
+						best_move = move
+						best_cover_delta = cover_delta
+
+				# Perform the best move
+				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, best_move), self.color))
 			
-			elif self.style == 'balanced':
-				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, legal_moves[index]), self.color))
+			# Attempt to create the smallest delta between player piece scores
+			elif self.style == 'defensive_pieces':
+				best_move = None
+				best_piece_delta = 500
+
+				for move in legal_moves:
+					
+					# Perform the move on a temporary board
+					temp_board = deepcopy(new_board)
+					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(temp_board, move), self.color))
+					
+					# Calculate delta scores
+					if self.color == 'W':
+						piece_delta = temp_board.piece_score_white - temp_board.piece_score_black
+					else:
+						piece_delta = temp_board.piece_score_black - temp_board.piece_score_white
+
+					if piece_delta < best_piece_delta:
+						best_move = move
+						best_piece_delta = piece_delta
+
+				# Perform the best move
+				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(new_board, best_move), self.color))
+			
+
 			return False, False, new_board
 
 		else:

@@ -31,6 +31,7 @@ def write_board_data(turn, current_player, board_start, board_end):
             coverage_end += ('-' if board_end.coverage_total[x][y][0] == '' else board_end.coverage_total[x][y][0]) + str(board_end.coverage_total[x][y][1])
 
     data = {
+        'Time': dt.datetime.now(),
         'Turn' : turn,
         'Moving Player': current_player,
         'Starting Board': board_start_enc, 
@@ -47,11 +48,11 @@ def write_board_data(turn, current_player, board_start, board_end):
     return data
 
 
-def play_game(data_file):
-    white = models.Player('W', 'random')
-    black = models.Player('B', 'random')
+def play_game(data_file, white_style, black_style):
+    white = models.Player('W', white_style)
+    black = models.Player('B', black_style)
     board = controller.setup_board()
-    boards = pd.DataFrame(columns=['Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End', 'White Piece Score', 'Black Piece Score', 'White Coverage Score', 'Black Coverage Score'])
+    boards = pd.DataFrame(columns=['Time', 'Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End', 'White Piece Score', 'Black Piece Score', 'White Coverage Score', 'Black Coverage Score'])
 
     current_player = 'W'
     in_progress = False
@@ -68,6 +69,8 @@ def play_game(data_file):
         current_player = 'W'
         in_progress = True
         last_board = deepcopy(board)
+
+        print('White turn ' + str(turn))
         
         # Wait for white player to make move
         while in_progress:
@@ -90,6 +93,8 @@ def play_game(data_file):
         in_progress = True
         last_board = deepcopy(board)
 
+        print('Black turn ' + str(turn))
+
         # Wait for black player to make move
         while in_progress:
             checkmate, in_progress, board = black.make_move(board)
@@ -108,7 +113,7 @@ def play_game(data_file):
         turn += 1
 
         # Automatic stalemate after n turns or when only two kings are left standing
-        if turn > 500:
+        if turn > 100:
             playing = False
             break
 
@@ -141,13 +146,19 @@ def play_game(data_file):
 master_data = pd.DataFrame(columns=['Winner'])
 start = dt.datetime.now()
 
-for i in range(0, 1):
-    print('Playing game ' + str(i+1))
-    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
-    master_data = master_data.append({
-        'Winner' : winner,
-        'Turns': turns
-    }, ignore_index=True)
+#for i in range(0, 10):
+#    print('Playing game ' + str(i+1))
+#    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
+#    master_data = master_data.append({
+#        'Winner' : winner,
+#        'Turns': turns
+#    }, ignore_index=True)
+
+winner, turns = play_game('raw_data/off_piece_off_piece.csv', 'offensive_pieces', 'offensive_pieces')
+winner, turns = play_game('raw_data/off_cover_off_cover.csv', 'offensive_coverage', 'offensive_coverage')
+winner, turns = play_game('raw_data/def_piece_def_piece.csv', 'defensive_pieces', 'defensive_pieces')
+winner, turns = play_game('raw_data/def_cover_def_cover.csv', 'defensive_coverage', 'defensive_coverage')
+
 
 end = dt.datetime.now()
 print('Start: ' + str(start))
