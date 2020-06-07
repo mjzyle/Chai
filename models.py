@@ -91,7 +91,7 @@ class Move:
 
 
 class Player:
-	def __init__(self, color, style):
+	def __init__(self, color, style='random'):
 		self.color = color
 		self.style = style
 

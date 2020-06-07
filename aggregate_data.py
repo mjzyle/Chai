@@ -22,3 +22,8 @@ def main():
         i += 1
 
     return master_data
+
+data = main()
+boards = data['Ending Coverage'].tolist()
+print(len(boards))
+print(len(set(boards)))

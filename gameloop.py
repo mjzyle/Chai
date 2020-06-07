@@ -3,7 +3,7 @@ import controller
 import pandas as pd
 import datetime as dt
 from copy import deepcopy
-
+import random
 
 def write_board_data(turn, current_player, board_start, board_end):
     board_start_enc = ''
@@ -33,7 +33,7 @@ def write_board_data(turn, current_player, board_start, board_end):
     data = {
         'Time': dt.datetime.now(),
         'Turn' : turn,
-        'Moving Player': current_player,
+        'Moving Player': current_player.color,
         'Starting Board': board_start_enc, 
         'Ending Board': board_end_enc,
         'In Check' : board_end.in_check,
@@ -42,15 +42,16 @@ def write_board_data(turn, current_player, board_start, board_end):
         'White Coverage Score': board_end.coverage_score_white,
         'Black Coverage Score': board_end.coverage_score_black,
         'White Piece Score' : board_end.piece_score_white,
-        'Black Piece Score' : board_end.piece_score_black
+        'Black Piece Score' : board_end.piece_score_black,
+        'Style': current_player.style
     }
 
     return data
 
 
-def play_game(data_file, white_style, black_style):
-    white = models.Player('W', white_style)
-    black = models.Player('B', black_style)
+def play_game(data_file):
+    white = models.Player('W')
+    black = models.Player('B')
     board = controller.setup_board()
     boards = pd.DataFrame(columns=['Time', 'Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End', 'White Piece Score', 'Black Piece Score', 'White Coverage Score', 'Black Coverage Score'])
 
@@ -61,6 +62,13 @@ def play_game(data_file, white_style, black_style):
     playing = True
     checkmate = False
 
+    playstyles = {
+        0: 'offensive_coverage',
+        1: 'offensive_pieces',
+        2: 'defensive_coverage',
+        3: 'defensive_pieces'
+    }
+
 
     while playing:
         ###########################################
@@ -69,6 +77,7 @@ def play_game(data_file, white_style, black_style):
         current_player = 'W'
         in_progress = True
         last_board = deepcopy(board)
+        white.style = playstyles[random.randrange(0, len(playstyles))]
 
         print('White turn ' + str(turn))
         
@@ -76,7 +85,7 @@ def play_game(data_file, white_style, black_style):
         while in_progress:
             checkmate, in_progress, board = white.make_move(board)
 
-        boards = boards.append(write_board_data(turn, current_player, last_board, board), ignore_index=True)
+        boards = boards.append(write_board_data(turn, white, last_board, board), ignore_index=True)
 
         # Check if black player has won (no moves possible for white)
         if checkmate:
@@ -92,6 +101,7 @@ def play_game(data_file, white_style, black_style):
         current_player = 'B'
         in_progress = True
         last_board = deepcopy(board)
+        black.style = playstyles[random.randrange(0, len(playstyles))]
 
         print('Black turn ' + str(turn))
 
@@ -99,7 +109,7 @@ def play_game(data_file, white_style, black_style):
         while in_progress:
             checkmate, in_progress, board = black.make_move(board)
 
-        boards = boards.append(write_board_data(turn, current_player, last_board, board), ignore_index=True)
+        boards = boards.append(write_board_data(turn, black, last_board, board), ignore_index=True)
 
         # Check if white player has won (no moves possible for black)
         if checkmate:
@@ -113,7 +123,7 @@ def play_game(data_file, white_style, black_style):
         turn += 1
 
         # Automatic stalemate after n turns or when only two kings are left standing
-        if turn > 100:
+        if turn > 500:
             playing = False
             break
 
@@ -136,7 +146,10 @@ def play_game(data_file, white_style, black_style):
             playing = False
 
 
+    boards['Winner'] = winner
+    boards['Turns'] = turn
     boards.to_csv(data_file)
+
     print('Winner: ' + winner)
     print('Turns: ' + str(turn))
     print(board)
@@ -146,18 +159,14 @@ def play_game(data_file, white_style, black_style):
 master_data = pd.DataFrame(columns=['Winner'])
 start = dt.datetime.now()
 
-#for i in range(0, 10):
-#    print('Playing game ' + str(i+1))
-#    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
-#    master_data = master_data.append({
-#        'Winner' : winner,
-#        'Turns': turns
-#    }, ignore_index=True)
 
-winner, turns = play_game('raw_data/off_piece_off_piece.csv', 'offensive_pieces', 'offensive_pieces')
-winner, turns = play_game('raw_data/off_cover_off_cover.csv', 'offensive_coverage', 'offensive_coverage')
-winner, turns = play_game('raw_data/def_piece_def_piece.csv', 'defensive_pieces', 'defensive_pieces')
-winner, turns = play_game('raw_data/def_cover_def_cover.csv', 'defensive_coverage', 'defensive_coverage')
+for i in range(0, 10):
+    print('Playing game ' + str(i+1))
+    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
+    master_data = master_data.append({
+        'Winner' : winner,
+        'Turns': turns
+    }, ignore_index=True)
 
 
 end = dt.datetime.now()
