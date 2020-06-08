@@ -1,9 +1,15 @@
+#!/usr/bin/python
+
 import models
 import controller
 import pandas as pd
 import datetime as dt
 from copy import deepcopy
 import random
+import threading
+import math
+import sys
+
 
 def write_board_data(turn, current_player, board_start, board_end):
     board_start_enc = ''
@@ -43,17 +49,20 @@ def write_board_data(turn, current_player, board_start, board_end):
         'Black Coverage Score': board_end.coverage_score_black,
         'White Piece Score' : board_end.piece_score_white,
         'Black Piece Score' : board_end.piece_score_black,
-        'Style': current_player.style
+        'Style': current_player.style,
+        'Black Pieces': len(board_end.black_pieces),
+        'White Pieces': len(board_end.white_pieces)
     }
 
     return data
 
 
-def play_game(data_file):
+def play_game(data_file, time_file, game, timeout):
     white = models.Player('W')
     black = models.Player('B')
     board = controller.setup_board()
-    boards = pd.DataFrame(columns=['Time', 'Turn', 'Moving Player', 'Starting Board', 'Ending Board', 'In Check', 'Coverage Start', 'Coverage End', 'White Piece Score', 'Black Piece Score', 'White Coverage Score', 'Black Coverage Score'])
+    boards = pd.DataFrame()
+    timing_data = pd.DataFrame()
 
     current_player = 'W'
     in_progress = False
@@ -69,8 +78,12 @@ def play_game(data_file):
         3: 'defensive_pieces'
     }
 
+    turn_start = None
+    turn_end = None
 
     while playing:
+        turn_start = dt.datetime.now()
+
         ###########################################
         ## WHITE TURN
         ###########################################
@@ -78,8 +91,6 @@ def play_game(data_file):
         in_progress = True
         last_board = deepcopy(board)
         white.style = playstyles[random.randrange(0, len(playstyles))]
-
-        print('White turn ' + str(turn))
         
         # Wait for white player to make move
         while in_progress:
@@ -103,8 +114,6 @@ def play_game(data_file):
         last_board = deepcopy(board)
         black.style = playstyles[random.randrange(0, len(playstyles))]
 
-        print('Black turn ' + str(turn))
-
         # Wait for black player to make move
         while in_progress:
             checkmate, in_progress, board = black.make_move(board)
@@ -115,15 +124,6 @@ def play_game(data_file):
         if checkmate:
             if board.in_check != '':
                 winner = 'White'
-            playing = False
-            break
-
-
-        # Proceed to next turn
-        turn += 1
-
-        # Automatic stalemate after n turns or when only two kings are left standing
-        if turn > 500:
             playing = False
             break
 
@@ -145,10 +145,32 @@ def play_game(data_file):
         if black_pieces == 1 and white_pieces == 1:
             playing = False
 
+        # Record turn timing data
+        turn_end = dt.datetime.now()
+        print("    Game " + str(game) + ": Turn " + str(turn) + ": Time " + str(turn_end - turn_start) + ' (' + white.style + ' vs ' + black.style + ')')
+
+        timing_data = timing_data.append({
+            'Game' : game,
+            'Turn' : turn,
+            'Time' : turn_end - turn_start,
+            'White Style' : white.style,
+            'Black Style' : black.style,
+            'White Pieces' : len(board.white_pieces),
+            'Black Pieces' : len(board.black_pieces)
+        }, ignore_index=True)
+
+        # Proceed to next turn
+        turn += 1
+
+        # Automatic stalemate after n turns or when only two kings are left standing
+        if turn > timeout:
+            playing = False
+            break
 
     boards['Winner'] = winner
     boards['Turns'] = turn
     boards.to_csv(data_file)
+    timing_data.to_csv(time_file)
 
     print('Winner: ' + winner)
     print('Turns: ' + str(turn))
@@ -156,20 +178,19 @@ def play_game(data_file):
 
     return winner, turn
 
-master_data = pd.DataFrame(columns=['Winner'])
+
+def run_games(start, end):
+    for i in range(start, end+1):
+        print('Playing game ' + str(i))
+        winner, turns = play_game('raw_data/game_' + str(i) + '.csv', 'raw_data/timing/game_' + str(i) + '_timing.csv', i, 80)
+
+
+game_start = int(sys.argv[1])
+game_end = int(sys.argv[2])
+
 start = dt.datetime.now()
-
-
-for i in range(0, 10):
-    print('Playing game ' + str(i+1))
-    winner, turns = play_game(r'raw_data/game_' + str(i+1) + '.csv')
-    master_data = master_data.append({
-        'Winner' : winner,
-        'Turns': turns
-    }, ignore_index=True)
-
-
+run_games(game_start, game_end)
 end = dt.datetime.now()
+
 print('Start: ' + str(start))
 print('End: ' + str(end))
-master_data.to_csv(r'raw_data/master.csv')

@@ -23,3 +23,24 @@ Looking at the original valid data pull of 1208 games, there are 444055 unique c
 
 Running 40 test games took a little over 2 hours (split across four different processes). 40 runs yielded 12 wins (30% of total data is usable), 8 black (20%) and 4 white (10%).
 
+
+###### 07.06 2020
+I think I'm approaching the data collection stage incorrectly. 
+
+I'm shifting my focus to optimizing some of my processes. First I am setting up an identical Linux virtual environment and writing a C script which uses OpenMP to multithread my main simulation method.
+
+Running another test of 40 randomized style selection games having made a change to optimize processing. Instead of checking all 64 spaces on the board, I now keep track of indices where each piece is located, meaning the algorithm only needs to check at most 16 spaces per move. This is being executed in conjunction with my multithreading C program.
+
+With optimizations this new run of 40 actually took ~10 minutes longer than yesterday's run. I'm not sure why that would be. I think the best bet for generating an initial amount of data in a reasonable amount of time is to decrease the number of moves until a draw based on the general number of moves needed for a player to win.
+
+Running a quick analysis of 25 win matches (out of 80 aggregated from both yesterday and today), the statistics related to the number of moves across each game are:
+
+    mean: 76 moves (rounded up from 75.32)
+    median: 58 moves
+    min: 17 moves
+    max: 366
+    range: 349
+
+Therefore, I will run another simulation with matches capped at 80 to see how that goes. I am also bumping the total simulations up to 100. 
+
+New run seems to be going faster - after about an hour we've already processed 27 simulations. Going to be running additional tasks which may slow down the execution from here on out.

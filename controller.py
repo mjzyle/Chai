@@ -32,6 +32,12 @@ def setup_board():
     for i in range(0, 8):
         temp[1][i].piece = models.Piece('W', 'P', 6, i, 'pieces/white_pawn.png')
 
+    # Setup lists to track where pieces are located on the board (to remove need to check every cell)
+    for x in range(0, 2):
+        for y in range(0, 8):
+            board.white_pieces.append([x, y])
+            board.black_pieces.append([7-x, y])
+
     board.cells = temp
 
     return update_coverage(board)
@@ -727,7 +733,7 @@ def remove_check_moves(board, moves, player_color):
     while m < len(legal_moves):
         move = legal_moves[m]
         temp_board = deepcopy(board)
-        temp_board = perform_move(temp_board, move)
+        temp_board = perform_move(player_color, temp_board, move)
 
         # Determine all possible moves that the opponent could make in the event that the king makes this move
         opponent_moves = []
@@ -751,28 +757,28 @@ def remove_check_moves(board, moves, player_color):
 def determine_check(board, last_player_color):
     new_board = board
 
-    x = 0
-    while x < 8:
-        y = 0
-        while y < 8:
-            if new_board.cells[x][y].piece is not None and new_board.cells[x][y].piece.color == last_player_color:
-                # Determine piece coverage moves
-                moves = get_cover_moves(new_board, x, y)
+    if last_player_color == 'B':
+        pieces = board.black_pieces
+    elif last_player_color == 'W':
+        pieces = board.white_pieces
 
-                for move in moves:
-                    if new_board.cells[move.end[0]][move.end[1]].piece is not None and new_board.cells[move.end[0]][move.end[1]].piece.color != last_player_color and new_board.cells[move.end[0]][move.end[1]].piece.role == 'K':
-                        if last_player_color == 'W':
-                            new_board.in_check = 'B'
-                        else:
-                            new_board.in_check = 'W'
-                        x = 8
-                        y = 8
-                        break
-                    else:
-                        new_board.in_check = ''
+    for piece in pieces:
 
-            y += 1
-        x += 1
+        # Determine piece coverage moves
+        moves = get_cover_moves(new_board, piece[0], piece[1])
+
+        for move in moves:
+            if new_board.cells[move.end[0]][move.end[1]].piece is not None and new_board.cells[move.end[0]][move.end[1]].piece.color != last_player_color and new_board.cells[move.end[0]][move.end[1]].piece.role == 'K':
+                if last_player_color == 'W':
+                    new_board.in_check = 'B'
+                else:
+                    new_board.in_check = 'W'
+                break
+            else:
+                new_board.in_check = ''
+
+        if new_board.in_check != '':
+            break
 
     return new_board
 
@@ -877,7 +883,7 @@ def update_coverage(board):
     return new_board
 
 
-def perform_move(board, move):
+def perform_move(color, board, move):
     start = move.start
     end = move.end
     special = move.special
@@ -887,6 +893,23 @@ def perform_move(board, move):
     piece = new_board.cells[start[0]][start[1]].piece 
     piece.moves += 1
 
+    # If the move captures a piece, remove it from the opponent list
+    if new_board.cells[end[0]][end[1]].piece is not None and new_board.cells[end[0]][end[1]].piece.color != color:
+        try:
+            if color == 'B':
+                new_board.white_pieces.remove(end)
+            elif color == 'W':
+                new_board.black_pieces.remove(end)
+        except ValueError:
+            print(color + " " + str(end))
+
+    # Update the move component in the player list
+    if color == 'W':
+        new_board.white_pieces[new_board.white_pieces.index(start)] = end
+    elif color == 'B':
+        new_board.black_pieces[new_board.black_pieces.index(start)] = end
+
+    # Perform the move by updating the board cells
     new_board.cells[start[0]][start[1]].piece = None
     new_board.cells[end[0]][end[1]].piece = piece
 
@@ -899,8 +922,7 @@ def perform_move(board, move):
             if end[0] == 0:
                 new_board.cells[end[0]][end[1]].piece = models.Piece('B', 'Q', end[0], end[1], 'pieces/black_queen.png')
 
-
     if special is not None:
-        new_board = perform_move(new_board, special)
+        new_board = perform_move(color, new_board, special)
 
     return new_board
