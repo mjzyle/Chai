@@ -34,7 +34,7 @@ class ChessWidget(Widget):
     coverage_black = []
     coverage_white = []
     current_board = 0
-    data = pd.read_csv('raw_data/game_1.csv').drop(columns='Unnamed: 0')
+    data = pd.read_csv('raw_data/game_0.csv').drop(columns='Unnamed: 0')
     check_prompt = ''
 
 
@@ -73,6 +73,10 @@ class ChessWidget(Widget):
                 
                 if key != '--':
                     self.b.cells[x][y].piece = models.Piece(key[0], key[1], x, y, self.image_files[key])
+                    if key[0] == 'W':
+                        self.b.white_pieces.append([x, y])
+                    elif key[0] == 'B':
+                        self.b.black_pieces.append([x, y])
                 else:
                     self.b.cells[x][y].piece = None
 

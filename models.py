@@ -29,6 +29,7 @@ class Board:
 		self.piece_score_black = 0
 		self.white_pieces = []
 		self.black_pieces = []
+		self.last_move_eff = 0
 
 		# Setup cells
 		for x in range(0, 8):
@@ -215,6 +216,124 @@ class Player:
 				# Perform the best move
 				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(self.color, new_board, best_move), self.color))
 			
+			####################################################
+			# Neural network playmodel
+			####################################################
+			elif self.style == 'neural_network':
+				best_move = None
+				best_score = 0.0
+
+				weight_coverage = 5
+				weight_pieces = 5
+				weight_king_self = 5
+				weight_king_opp = 5
+				#weight_opp_response = 5
+
+				bias_coverage = 5
+				bias_pieces = 5
+				bias_king_self = 5
+				bias_king_opp = 5
+				#bias_opp_response = 5
+
+				for move in legal_moves:
+					temp_board = deepcopy(new_board)
+					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(self.color, temp_board, move), self.color))
+
+					# Determine coverage value
+					if self.color == 'W':
+						value_coverage = controller.sigmoid(temp_board.coverage_score_white - temp_board.coverage_score_black)
+					elif self.color == 'B':
+						value_coverage = controller.sigmoid(temp_board.coverage_score_black - temp_board.coverage_score_white)
+
+					# Determine pieces value
+					if self.color == 'W':
+						value_pieces = controller.sigmoid(temp_board.piece_score_white - temp_board.piece_score_black)
+					elif self.color == 'B':
+						value_pieces = controller.sigmoid(temp_board.piece_score_black - temp_board.piece_score_white)
+
+					# Determine player king value
+					if self.color == 'W':
+						king_loc = []
+						king_cover = 0
+
+						for loc in temp_board.white_pieces:
+							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
+								king_loc = loc
+								break
+
+						for x in range(king_loc[0]-1, king_loc[0]+2):
+							for y in range(king_loc[1]-1, king_loc[1]+2):
+								if x > -1 and x < 8 and y > -1 and y < 8:
+									cover = temp_board.coverage_total[x][y]
+									if cover[0] == 'W':
+										king_cover += cover[1]
+					
+					elif self.color == 'B':
+						king_loc = []
+						king_cover = 0
+
+						for loc in temp_board.black_pieces:
+							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
+								king_loc = loc
+								break
+
+						for x in range(king_loc[0]-1, king_loc[0]+2):
+							for y in range(king_loc[1]-1, king_loc[1]+2):
+								if x > -1 and x < 8 and y > -1 and y < 8:
+									cover = temp_board.coverage_total[x][y]
+									if cover[0] == 'B':
+										king_cover += cover[1]
+
+					value_king_self = controller.sigmoid(king_cover)
+
+					# Determine opponent king value
+					if self.color == 'W':
+						opp_loc = []
+						opp_cover = 0
+
+						for loc in temp_board.black_pieces:
+							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
+								opp_loc = loc
+								break
+
+						for x in range(opp_loc[0]-1, opp_loc[0]+2):
+							for y in range(opp_loc[1]-1, opp_loc[1]+2):
+								if x > -1 and x < 8 and y > -1 and y < 8:
+									cover = temp_board.coverage_total[x][y]
+									if cover[0] == 'B':
+										opp_cover += cover[1]
+					
+					elif self.color == 'B':
+						opp_loc = []
+						opp_cover = 0
+
+						for loc in temp_board.white_pieces:
+							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
+								opp_loc = loc
+								break
+
+						for x in range(opp_loc[0]-1, opp_loc[0]+2):
+							for y in range(opp_loc[1]-1, opp_loc[1]+2):
+								if x > -1 and x < 8 and y > -1 and y < 8:
+									cover = temp_board.coverage_total[x][y]
+									if cover[0] == 'W':
+										opp_cover += cover[1]
+
+					value_king_opp = controller.sigmoid(opp_cover)
+
+					# Determine opponent response value
+					# TO DO
+
+					# Apply weights and biases
+					eff_score = (weight_coverage * value_coverage + bias_coverage) + (weight_pieces * value_pieces + bias_pieces) + (weight_king_self * value_king_self + bias_king_self) + (weight_king_opp * value_king_opp + bias_king_opp)
+				
+					if eff_score > best_score:
+						best_score = eff_score
+						best_move = move
+
+				# Perform the best move
+				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(self.color, new_board, best_move), self.color))
+				new_board.last_move_eff = best_score
 
 			return False, False, new_board
 

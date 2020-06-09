@@ -44,3 +44,43 @@ Running a quick analysis of 25 win matches (out of 80 aggregated from both yeste
 Therefore, I will run another simulation with matches capped at 80 to see how that goes. I am also bumping the total simulations up to 100. 
 
 New run seems to be going faster - after about an hour we've already processed 27 simulations. Going to be running additional tasks which may slow down the execution from here on out.
+
+
+###### 08.06.2020
+Data from last night's run of 200 simulations:
+    
+    Start: 2020-06-07 22:08:02.422028
+    End: 2020-06-08 06:19:42.605226
+
+Actually took less time and not more - yesterday's observation may have been due to some misstep on my part.
+
+Across four simulation runs there are a total of 67 valid games (i.e. games where one of the two players wins). This will by my initial training set for classifying playstyles based on board coverage and piece scores.
+
+My initial thought in looking at the wins data is this: for each turn I give each player three numerical scores based on (a) their board coverage, (b) the number of pieces they still have on the board, and (c) the total "score" of their pieces (with more valuable pieces being scored higher). I could create a single metric based on a weighted sum of these three values:
+
+    M = w_cover * cover + w_piece_score * piece_score + w_piece_count * piece_count
+
+where w represents the weights. The value of M will dictate which playstyle the algorithm should use (offensive or defensive). I could further train the model to modify these weights based on which scores it determines to be most integral in increasing the win likelihood.
+
+Another idea I am considering comes from the fact that this algebraic metric approach reminds me of a linear programming problem. What if I model a simple LP attempting to maximize this metric, and then with binary values representing which playstyle is selected?
+
+Doing some browsing online shows that my first thought is most in line with a neural network (not necessarily a ML classification problem like I was originally thinking).
+
+The new question I am considering with a neural network is: how do I determine what a successful/'actual' outcome is in order to calculate the mean square error as my cost function? I think this route would need to use a single one of my play styles and use the network to select from each individual move. For example, suppose we are playing offensively. If a move increases the delta between the moving player's coverage and the opponent's coverage, that is a good move. If it reduces this delta, it's a bad move and the cost function will show that. Rather than selecting a playstyle (which then determines a move), we select a move directly.
+
+What if our neural network produces a percentage ranking of how beneficial a move would be? We could then compare this ranking for all moves and chose the best one. The ranking of each move could depend on these data factors (such as coverage, the number of pieces the opponent/player have, potential moves that this would open for the opponent, etc.). 
+
+I am going to implement a new prototype based on this structure. Each potential move will be judged based on a neural network using five metrics:
+
+    a) Does the move increase the player's board coverage delta over the opponent? (increasing board positioning)
+    b) Does the move increase the player's piece score delta over the opponent? (capturing opponent pieces)
+    c) Does the move increase friendly coverage surrounding the player's king? (increase player defenses)
+    d) Does the move decrease opponent coverage surrounding the opponent's king? (reduce opponent defenses)
+    e) Does the move open up an opportunity for the opponent to immediately make a move which undoes or exceeds any of these effects (a through d)?
+
+This metric will be calculated for each move, and the move with the highest metric will be performed.
+
+The cost function will be applied and weights/biases adjusted through backpropogation at the end of each game. The cost function will be an algebraic representation of the following to judge whether the moves were successful or not:
+
+    a) Did the player win the game?
+    b) What proportion of player moves in the game were "good moves" in comparision to the opponent? A "good move" is one where the opponent's immediate responding move had a lower effectiveness score (see above).

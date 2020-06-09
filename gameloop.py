@@ -9,6 +9,7 @@ import random
 import threading
 import math
 import sys
+import os
 
 
 def write_board_data(turn, current_player, board_start, board_end):
@@ -51,7 +52,8 @@ def write_board_data(turn, current_player, board_start, board_end):
         'Black Piece Score' : board_end.piece_score_black,
         'Style': current_player.style,
         'Black Pieces': len(board_end.black_pieces),
-        'White Pieces': len(board_end.white_pieces)
+        'White Pieces': len(board_end.white_pieces),
+        'Move Effectiveness Score' : board_end.last_move_eff
     }
 
     return data
@@ -90,7 +92,7 @@ def play_game(data_file, time_file, game, timeout):
         current_player = 'W'
         in_progress = True
         last_board = deepcopy(board)
-        white.style = playstyles[random.randrange(0, len(playstyles))]
+        white.style = 'neural_network'
         
         # Wait for white player to make move
         while in_progress:
@@ -112,7 +114,7 @@ def play_game(data_file, time_file, game, timeout):
         current_player = 'B'
         in_progress = True
         last_board = deepcopy(board)
-        black.style = playstyles[random.randrange(0, len(playstyles))]
+        black.style = playstyles[random.randrange(0, 4)]
 
         # Wait for black player to make move
         while in_progress:
@@ -180,9 +182,22 @@ def play_game(data_file, time_file, game, timeout):
 
 
 def run_games(start, end):
+    # Determine where to start numbering new runs (relative to current number of total data points for future training)
+    root_start = 0
+    files = os.listdir('raw_data/training')
+
+    i = 0
+    while i < len(files):
+        if files[i][-4:] != '.csv':
+            files.pop(i)
+        else:
+            i += 1
+
+    root_start = len(files)
+    
     for i in range(start, end+1):
         print('Playing game ' + str(i))
-        winner, turns = play_game('raw_data/game_' + str(i) + '.csv', 'raw_data/timing/game_' + str(i) + '_timing.csv', i, 80)
+        winner, turns = play_game('raw_data/game_' + str(root_start+i) + '.csv', 'raw_data/timing/game_' + str(root_start+i) + '_timing.csv', i, 500)
 
 
 game_start = int(sys.argv[1])
