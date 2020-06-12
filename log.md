@@ -90,3 +90,7 @@ The cost function will be applied and weights/biases adjusted through backpropog
 I've been playing with the design for the neural network, experimenting with TensorFlow. I've decided that the simplest option is to have a binary classification problem. My thinking is: the network receives as inputs data related to the board coverage and piece layout. It then predicts whether this layout will lead to a win or a loss. The gameplay algorithm will generate these predictions for every possible move it can make in a given turn, and from there make a choice on how to proceed.
 
 The data is already collected. I did some cleanup so from here on out it should be easier to organize training data.
+
+
+###### 12.06.2020
+I've managed to implement model-based predictions into the current gameplay loop. However, there is a need to validate the data encoding/decoding to ensure results are consistent for both black and white pieces. My next focus is on reorganizing the code as a whole.

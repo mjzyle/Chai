@@ -114,7 +114,7 @@ def play_game(data_file, time_file, game, timeout):
         current_player = 'B'
         in_progress = True
         last_board = deepcopy(board)
-        black.style = playstyles[random.randrange(0, 4)]
+        black.style = 'neural_network'
 
         # Wait for black player to make move
         while in_progress:

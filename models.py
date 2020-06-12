@@ -1,5 +1,8 @@
 import controller
 import random
+import neural_network
+import tensorflow as tf
+import numpy as np
 from copy import deepcopy
 
 
@@ -97,6 +100,7 @@ class Player:
 	def __init__(self, color, style='random'):
 		self.color = color
 		self.style = style
+		self.model = neural_network.get_model()
 
 	def make_move(self, board):
 		new_board = deepcopy(board)
@@ -221,115 +225,84 @@ class Player:
 			####################################################
 			elif self.style == 'neural_network':
 				best_move = None
-				best_score = 0.0
+				best_score = -1
 
-				weight_coverage = 5
-				weight_pieces = 5
-				weight_king_self = 5
-				weight_king_opp = 5
-				#weight_opp_response = 5
-
-				bias_coverage = 5
-				bias_pieces = 5
-				bias_king_self = 5
-				bias_king_opp = 5
-				#bias_opp_response = 5
-
+				# Evaluate each possible move
 				for move in legal_moves:
 					temp_board = deepcopy(new_board)
 					temp_board = controller.update_coverage(controller.determine_check(controller.perform_move(self.color, temp_board, move), self.color))
-
-					# Determine coverage value
-					if self.color == 'W':
-						value_coverage = controller.sigmoid(temp_board.coverage_score_white - temp_board.coverage_score_black)
-					elif self.color == 'B':
-						value_coverage = controller.sigmoid(temp_board.coverage_score_black - temp_board.coverage_score_white)
-
-					# Determine pieces value
-					if self.color == 'W':
-						value_pieces = controller.sigmoid(temp_board.piece_score_white - temp_board.piece_score_black)
-					elif self.color == 'B':
-						value_pieces = controller.sigmoid(temp_board.piece_score_black - temp_board.piece_score_white)
-
-					# Determine player king value
-					if self.color == 'W':
-						king_loc = []
-						king_cover = 0
-
-						for loc in temp_board.white_pieces:
-							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
-								king_loc = loc
-								break
-
-						for x in range(king_loc[0]-1, king_loc[0]+2):
-							for y in range(king_loc[1]-1, king_loc[1]+2):
-								if x > -1 and x < 8 and y > -1 and y < 8:
-									cover = temp_board.coverage_total[x][y]
-									if cover[0] == 'W':
-										king_cover += cover[1]
+					data = {}	
+					cover = ''
+					brd = ''
+					points = {
+						'P': 1,
+						'R': 2,
+						'B': 3,
+						'N': 3,
+						'Q': 4,
+						'K': 9
+					}
 					
-					elif self.color == 'B':
-						king_loc = []
-						king_cover = 0
+					# Encode board
+					for x in range(0, 8):
+						for y in range(0, 8):
+							if temp_board.cells[x][y].piece is not None:
+								brd += str(temp_board.cells[x][y].piece)
+							else:
+								brd += '--'
 
-						for loc in temp_board.black_pieces:
-							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
-								king_loc = loc
-								break
-
-						for x in range(king_loc[0]-1, king_loc[0]+2):
-							for y in range(king_loc[1]-1, king_loc[1]+2):
-								if x > -1 and x < 8 and y > -1 and y < 8:
-									cover = temp_board.coverage_total[x][y]
-									if cover[0] == 'B':
-										king_cover += cover[1]
-
-					value_king_self = controller.sigmoid(king_cover)
-
-					# Determine opponent king value
+					# Encode coverage
+					for x in range(0, 8):
+						for y in range(0, 8):
+							cover += ('-' if temp_board.coverage_total[x][y][0] == '' else temp_board.coverage_total[x][y][0]) + str(temp_board.coverage_total[x][y][1])
+            
+					# Translate data into model-acceptable form
 					if self.color == 'W':
-						opp_loc = []
-						opp_cover = 0
+						i = 0
+						while i < 128:
+							if cover[i] == 'W':
+								data['cover' + str(i)] = int(cover[i+1])
+							elif cover[i] == 'B':
+								data['cover' + str(i)] = int(cover[i+1]) * -1
+							else:
+								data['cover' + str(i)] = 0
 
-						for loc in temp_board.black_pieces:
-							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
-								opp_loc = loc
-								break
+							if brd[i] == 'W':
+								data['pieces' + str(i)] = int(points[brd[i+1]])
+							elif brd[i] == 'B':
+								data['pieces' + str(i)] = int(points[brd[i+1]]) * -1
+							else:
+								data['pieces' + str(i)] = 0
 
-						for x in range(opp_loc[0]-1, opp_loc[0]+2):
-							for y in range(opp_loc[1]-1, opp_loc[1]+2):
-								if x > -1 and x < 8 and y > -1 and y < 8:
-									cover = temp_board.coverage_total[x][y]
-									if cover[0] == 'B':
-										opp_cover += cover[1]
-					
+							i += 2
+
 					elif self.color == 'B':
-						opp_loc = []
-						opp_cover = 0
+						i = 126
+						while i > -1:
+							if cover[i] == 'B':
+								data['cover' + str(i)] = int(cover[i+1])
+							elif cover[i] == 'W':
+								data['cover' + str(i)] = int(cover[i+1]) * -1
+							else:
+								data['cover' + str(i)] = 0
 
-						for loc in temp_board.white_pieces:
-							if temp_board.cells[loc[0]][loc[1]].piece.role == 'K':
-								opp_loc = loc
-								break
+							if brd[i] == 'B':
+								data['pieces' + str(i)] = int(points[brd[i+1]])
+							elif brd[i] == 'W':
+								data['pieces' + str(i)] = int(points[brd[i+1]]) * -1
+							else:
+								data['pieces' + str(i)] = 0
 
-						for x in range(opp_loc[0]-1, opp_loc[0]+2):
-							for y in range(opp_loc[1]-1, opp_loc[1]+2):
-								if x > -1 and x < 8 and y > -1 and y < 8:
-									cover = temp_board.coverage_total[x][y]
-									if cover[0] == 'W':
-										opp_cover += cover[1]
+							i -= 2
 
-					value_king_opp = controller.sigmoid(opp_cover)
-
-					# Determine opponent response value
-					# TO DO
-
-					# Apply weights and biases
-					eff_score = (weight_coverage * value_coverage + bias_coverage) + (weight_pieces * value_pieces + bias_pieces) + (weight_king_self * value_king_self + bias_king_self) + (weight_king_opp * value_king_opp + bias_king_opp)
-				
-					if eff_score > best_score:
-						best_score = eff_score
+					# Predict likelihood of winning with this move
+					arr = np.array([list(data.values())])
+					predict = float(self.model.predict(arr))
+					
+					if predict > best_score:
+						best_score = predict
 						best_move = move
+
 
 				# Perform the best move
 				new_board = controller.update_coverage(controller.determine_check(controller.perform_move(self.color, new_board, best_move), self.color))
