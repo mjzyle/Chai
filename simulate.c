@@ -5,9 +5,13 @@
 
 int main(int argc, char** argv){
 
-    const int threads = 4;
-    const int sims = 200;
+    // Setup the neural network model and save before starting any simulations
+    system("python -c \"import ai_controller; ai_controller.setup_model();\"");
 
+    const int threads = 4;              // Number of parallel threads
+    const int sims = 100;               // Number of total simulations
+
+    // Execute simulations in parallel
     #pragma omp parallel for
     for (int i = 0; i < threads; i++) {
         char func[400] = "python gameloop.py ";

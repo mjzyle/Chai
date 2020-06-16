@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import math
 import tensorflow as tf
 import numpy as np
@@ -8,7 +10,7 @@ from tensorflow.keras import layers
 
 
 # Basic win/loss prediction network
-def get_model():
+def setup_model():
     #inputs = keras.Input(shape=(128,))
     #dense1 = layers.Dense(64, activation='relu')
     #dense2 = layers.Dense(64, activation='relu')
@@ -30,10 +32,10 @@ def get_model():
 
     model.compile(
         optimizer=tf.keras.optimizers.RMSprop(0.001),
-        loss=tf.keras.losses.BinaryCrossentropy(),
+        #loss=tf.keras.losses.BinaryCrossentropy(),
+        loss='binary_crossentropy',
         metrics=['accuracy']
     )
 
     model.fit(train_dataset, epochs=15)
-
-    return model
+    model.save('neural_network_model')

@@ -94,3 +94,51 @@ The data is already collected. I did some cleanup so from here on out it should 
 
 ###### 12.06.2020
 I've managed to implement model-based predictions into the current gameplay loop. However, there is a need to validate the data encoding/decoding to ensure results are consistent for both black and white pieces. My next focus is on reorganizing the code as a whole.
+
+
+###### 14.06.2020
+Reorganized code into separate model/controller files based on gameplay, AI, and data processing functions.
+
+I took a look at how I'm recording the training daya and realized I can record each board layout as both a win and a loss (provided the orientations are flipped). I changed the code to do just that. I'm currently running a 10-game test using this new training set of ~12,000 datapoints. My hypothesis is that the board score (metric between 0.0 and 1.0) should hover around 0.5 early in the game, then gravitate towards either 1.0 or 0.0 depending on the likelihood of winning or losing.
+
+A good next step is optimizing the neural network to save after training. That way it only needs to be trained once for each batch of simulations. Currently it is retraining for each player, for each game.
+
+Ended the simulation to make a quick change in the C script. The program now trains and saves the model once before all simulations begin, then loads the model for each individual sim. Kicked off the same 10-game test again.
+
+Just a thought - what if I were to record draws as losses and use those datapoints in training?
+
+
+###### 15.06.2020
+Approximate runtime details for yesterday's 201 game simulation (taken from 1 thread of 4, not including model training time):
+    
+    Start: 2020-06-14 14:11:13.102297
+    End: 2020-06-15 03:07:29.432949
+
+Gameplay results:
+
+    Total games: 201
+    White wins: 11 (5.47%)
+    Black wins: 36 (17.91%)
+
+Today's plan is to run two tests. First will be to rerun yesterday's simulation exactly with the added data, to see if the algorithm is actually learning. What we should observe is that the percentage of white wins should increase with more board data added.
+
+The second test will be doing the same, only including draw games as universal losses. We are looking for a similar outcome.
+
+In the interest of time, I will run 100 simulations of each, beginning with the non-draw data.
+
+While the first test is running, fixed a small bug that was producing extra simulations (after dividing into threads the boundary sims were actually overwriting). Simulations from here on out should cap at the end value.
+
+Test 1 results (100 sims, new data added, wins only):
+
+    (Timing data from final completed thread)
+    Start: 2020-06-15 10:17:01.350281
+    End: 2020-06-15 17:19:17.890493
+    Total games: 101
+    White wins: 3 (0.0297029702970297)
+    Black wins: 19 (0.18811881188118812)
+
+The network was actually less effective (winning just shy of 3% of games) with more data... 
+
+Running test 2 with the exact same dataset, only counting draws as losses. Draws are counted as two losses (once for the white and once for the black loss).
+
+The data aggregation step is taking longer than expected (due to the massive amount of new datafiles from draw games). Leaving the data to compile overnight.

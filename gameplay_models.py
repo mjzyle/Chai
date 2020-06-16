@@ -1,9 +1,9 @@
-import controller
+import gameplay_controller as controller
 import random
-import neural_network
 import tensorflow as tf
 import numpy as np
 from copy import deepcopy
+from tensorflow import keras
 
 
 class Cell:
@@ -100,7 +100,7 @@ class Player:
 	def __init__(self, color, style='random'):
 		self.color = color
 		self.style = style
-		self.model = neural_network.get_model()
+		self.model = keras.models.load_model('neural_network_model')
 
 	def make_move(self, board):
 		new_board = deepcopy(board)
