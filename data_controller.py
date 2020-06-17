@@ -1,5 +1,7 @@
 import pandas as pd
 import math
+import mysql.connector
+import getpass
 from shutil import copyfile
 from os import listdir
 from os import scandir
@@ -288,11 +290,12 @@ def get_training_data(root):
                 data = data.append(new_row, ignore_index=True)
                 rec_as_winner = not rec_as_winner
 
-            if winner == 'Draw':
-                games_used -= 1
-                break
+            #if winner == 'Draw':
+                #games_used -= 1
+                #break
 
         count += 1
+        print('Datapoints: ' + str(len(data)))
 
 
     data.to_csv('raw_data/training_data.csv')
@@ -300,6 +303,191 @@ def get_training_data(root):
     print('Datapoints: ' + str(len(data)))
 
 
-# Determine that training data has been recorded correctly
-def validate_training_data(loc):
-    return 0
+# Connect to MySQL database and save data to correct table(s)
+def save_training_data(root):
+    connected = False
+    
+    # Establish database connection
+    while not connected:
+        try:
+            # Prompt user for DB username and password
+            user = input('DB User: ')
+            pwd = getpass.getpass()
+
+            # Connect to database
+            cnx = mysql.connector.connect(user=user, password=pwd)
+            cursor = cnx.cursor()
+
+            connected = True
+
+        except mysql.connector.errors.ProgrammingError:
+            print('User/password combination incorrect')
+            connected = False
+
+    cursor.execute("USE chai")
+
+    # Setup MySQL insertion command
+    query = 'INSERT INTO training_data (game_id, win, '
+
+    for i in range(0, 64):
+        query += 'pieces' + str(i) + ', '
+    for i in range(0, 63):
+        query += 'cover' + str(i) + ', '
+    
+    query += 'cover63) VALUES ('
+
+    points = {
+        'P': 1,
+        'R': 2,
+        'B': 3,
+        'N': 3,
+        'Q': 4,
+        'K': 9
+    }
+
+    # Determine directories for all game datafiles
+    files = []
+    for loc in scandir(root):
+        temp = listdir(loc.path)
+        for file in temp:
+            files.append(loc.path + '\\' + file)
+
+    count = 1
+    for file in files:    
+        game = pd.read_csv(file)
+
+        # Record each dataset twice (once as a win and once as a loss, but oriented to the opposite player)
+        print('Processing file ' + str(count) + ' of ' + str(len(files)))
+
+        rec_as_winner = True
+        # Aggregate training data to identify wins (both black and white wins)
+        for index, row in game.iterrows():
+            for i in range(0, 2):
+                cover = row['Ending Coverage']
+                board = row['Ending Board']
+                winner = row['Winner']
+                new_row = {}
+
+                #if winner == 'Draw':
+                #    break
+
+                rec_index = 0
+
+                if rec_as_winner:
+                    new_row['win'] = 1
+                    if winner == 'White':
+                        i = 0
+                        while i < 128:
+                            if cover[i] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1])
+                            elif cover[i] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                            else:
+                                new_row['cover' + str(rec_index)] = 0
+
+                            if board[i] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
+                            elif board[i] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            else:
+                                new_row['pieces' + str(rec_index)] = 0
+
+                            i += 2
+                            rec_index += 1
+
+                    elif winner == 'Black' or winner == 'Draw':
+                        i = 126
+                        while i > -1:
+                            if cover[i] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1])
+                            elif cover[i] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                            else:
+                                new_row['cover' + str(rec_index)] = 0
+
+                            if board[i] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
+                            elif board[i] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            else:
+                                new_row['pieces' + str(rec_index)] = 0
+
+                            i -= 2
+                            rec_index += 1
+                    
+                    else:
+                        print('ERROR: Invalid game outcome')
+
+                else:
+                    new_row['win'] = 0
+                    if winner == 'Black':
+                        i = 0
+                        while i < 128:
+                            if cover[i] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1])
+                            elif cover[i] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                            else:
+                                new_row['cover' + str(rec_index)] = 0
+
+                            if board[i] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
+                            elif board[i] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            else:
+                                new_row['pieces' + str(rec_index)] = 0
+
+                            i += 2
+                            rec_index += 1
+
+                    elif winner == 'White' or winner == 'Draw':
+                        i = 126
+                        while i > -1:
+                            if cover[i] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1])
+                            elif cover[i] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                            else:
+                                new_row['cover' + str(rec_index)] = 0
+
+                            if board[i] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
+                            elif board[i] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            else:
+                                new_row['pieces' + str(rec_index)] = 0
+
+                            i -= 2
+                            rec_index += 1
+
+                    else:
+                        print('ERROR: Invalid game outcome')
+
+                # Undo any cases where a draw is recorded as a winner (code uses the win/loss logic to record draws twice for both board orientations, but they should all be losses)
+                if winner == 'Draw':
+                    new_row['win'] = 0
+
+                # Setup query
+                temp_query = query
+                temp_query += str(count) + ', ' + str(new_row['win']) + ', '
+
+                for i in range(0, 64):
+                    temp_query += str(new_row['pieces' + str(i)]) + ', '
+                for i in range(0, 63):
+                    temp_query += str(new_row['cover' + str(i)]) + ','
+
+                temp_query += str(new_row['cover63']) + ');'
+
+                # Commit data to database
+                cursor.execute(temp_query)
+                rec_as_winner = not rec_as_winner
+
+            #if winner == 'Draw':
+                #games_used -= 1
+                #break
+
+        cnx.commit()
+        count += 1
+
+    cnx.close()
+

@@ -142,3 +142,9 @@ The network was actually less effective (winning just shy of 3% of games) with m
 Running test 2 with the exact same dataset, only counting draws as losses. Draws are counted as two losses (once for the white and once for the black loss).
 
 The data aggregation step is taking longer than expected (due to the massive amount of new datafiles from draw games). Leaving the data to compile overnight.
+
+
+###### 16.06.2020
+Made a silly error in my data aggregation code yesterday when including the draw games, so I am rerunning the process again. This will end up taking most of today to compile all the data, so the second test will likely be left to run overnight and checked tomorrow. It would be advantageous in the immediate future to look into setting up a database (likely MySQL) to avoid the need to reaggregate data.
+
+I setup a 'quick and dirty' MySQL database to handle training data and kicked off a process to write all the backlogged training datasets from CSV to MySQL. Terminated the original process as it seemed to have slowed down in execution and was taking performance away from my new process.
