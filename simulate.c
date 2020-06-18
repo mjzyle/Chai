@@ -6,7 +6,7 @@
 int main(int argc, char** argv){
 
     // Setup the neural network model and save before starting any simulations
-    system("python -c \"import ai_controller; ai_controller.setup_model();\"");
+    //system("python -c \"import ai_controller; ai_controller.setup_model(); ai_controller.train_model()\"");
 
     const int threads = 4;              // Number of parallel threads
     const int sims = 100;               // Number of total simulations

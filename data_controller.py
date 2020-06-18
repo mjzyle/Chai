@@ -36,6 +36,31 @@ def filter_wins(loc):
     print('Black wins: ' + str(black_wins) + ' (' + str(black_wins/tot_games) + ')')
 
 
+# Read from a directory with gameplay data and count wins for white/black players
+def count_wins(loc='raw_data'):
+    files = listdir(loc)
+
+    white_wins = 0
+    black_wins = 0
+    tot_games = 0
+
+    for file in files:
+        if 'training_data' in file:
+            continue
+        if file[-4:] == '.csv':
+            tot_games += 1
+            data = pd.read_csv(loc + '//' + file)
+            if str(data.loc[0, 'Winner']) != 'Draw':
+                if data.loc[0, 'Winner'] == 'White':
+                    white_wins += 1
+                else:
+                    black_wins += 1
+
+    print('Total games: ' + str(tot_games))
+    print('White wins: ' + str(white_wins) + ' (' + str(white_wins/tot_games) + ')')
+    print('Black wins: ' + str(black_wins) + ' (' + str(black_wins/tot_games) + ')')
+
+
 # Determine the total number of turns in a winning game
 def get_num_turns_to_win(directories):
     mean = 0
@@ -303,11 +328,10 @@ def get_training_data(root):
     print('Datapoints: ' + str(len(data)))
 
 
-# Connect to MySQL database and save data to correct table(s)
-def save_training_data(root):
+# Establish MySQL database connection (prompts caller for username and password)
+def establish_db_connection():
     connected = False
     
-    # Establish database connection
     while not connected:
         try:
             # Prompt user for DB username and password
@@ -324,6 +348,13 @@ def save_training_data(root):
             print('User/password combination incorrect')
             connected = False
 
+    print('Connection successful')
+    return cnx, cursor
+
+
+# Connect to MySQL database and save data to correct table(s)
+def save_training_data(root):
+    cnx, cursor = establish_db_connection()
     cursor.execute("USE chai")
 
     # Setup MySQL insertion command
@@ -491,3 +522,22 @@ def save_training_data(root):
 
     cnx.close()
 
+
+# Count the number of training datapoints in CSV files
+def count_training_data(root):
+    # Determine directories for all game datafiles
+    data = pd.DataFrame()
+    files = []
+    for loc in scandir(root):
+        temp = listdir(loc.path)
+        for file in temp:
+            files.append(loc.path + '\\' + file)
+
+    tot_len = 0
+
+    for file in files:
+        temp = pd.read_csv(file)
+        tot_len += len(temp)
+
+    print(tot_len)
+    print(tot_len * 2)

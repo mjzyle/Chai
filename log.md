@@ -148,3 +148,23 @@ The data aggregation step is taking longer than expected (due to the massive amo
 Made a silly error in my data aggregation code yesterday when including the draw games, so I am rerunning the process again. This will end up taking most of today to compile all the data, so the second test will likely be left to run overnight and checked tomorrow. It would be advantageous in the immediate future to look into setting up a database (likely MySQL) to avoid the need to reaggregate data.
 
 I setup a 'quick and dirty' MySQL database to handle training data and kicked off a process to write all the backlogged training datasets from CSV to MySQL. Terminated the original process as it seemed to have slowed down in execution and was taking performance away from my new process.
+
+
+###### 17.06.2020
+The current training dataset should produce 592,332 datapoints. MySQL table inspect shows autoincrement is at 592,333, yet the table only includes 571,212 rows. I'm not sure what would be producing this discrepancy, unless the process is somehow automatically removing duplicates. For the time being, I am going to move ahead with creating a connector between the MySQL table and the neural network.
+
+I've managed to switch the training process to pull the data from MySQL instead of the CSV files. I'm currently training the model and will kick off another 100 game simulation (with draws included as losses). The training protocol is showing 592,332 total datapoints (which again differs from the given row number in MySQL Workbench).
+
+Dropping the training down to 5 epochs and added epoch count as input to train_model function.
+
+In the meantime, setting up a new Python 3.7 environment for Ubuntu to address some Keras errors with reading/writing models using my C script.
+
+Test results:
+
+    Total games: 86
+    White wins: 2 (0.023255813953488372)
+    Black wins: 21 (0.2441860465116279)
+
+I don't have accurate timing data as I ran these processes outside the gameloop.py script. Encountered an error that cut one of the threads short; special moves don't appear to be performing correctly/updating piece locations. It looks like there was a castle attempt where the rook couldn't be located, so I'm making a note to check out that bug.
+
+Performance is not as great this time around... I need to do some thinking tomorrow.
