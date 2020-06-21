@@ -168,3 +168,7 @@ Test results:
 I don't have accurate timing data as I ran these processes outside the gameloop.py script. Encountered an error that cut one of the threads short; special moves don't appear to be performing correctly/updating piece locations. It looks like there was a castle attempt where the rook couldn't be located, so I'm making a note to check out that bug.
 
 Performance is not as great this time around... I need to do some thinking tomorrow.
+
+
+###### 18.06.2020
+Running a new n=100 test with only one layer (64 nodes) in the neural network (instead of two). Currently training the new model and attempting to setup the Ubuntu Python 3.7 virtual environment with TensorFlow.

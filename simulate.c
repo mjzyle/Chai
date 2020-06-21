@@ -10,10 +10,11 @@ int main(int argc, char** argv){
 
     const int threads = 4;              // Number of parallel threads
     const int sims = 100;               // Number of total simulations
+    int i = 0;
 
     // Execute simulations in parallel
     #pragma omp parallel for
-    for (int i = 0; i < threads; i++) {
+    for (i = 0; i < threads; i++) {
         char func[400] = "python gameloop.py ";
         char start[5], end[5];
 

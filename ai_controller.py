@@ -15,7 +15,7 @@ def setup_model():
     model = keras.models.Sequential()
     model.add(layers.Dense(4, input_dim=128, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(64, activation='relu'))
+    #model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
     model.compile(
