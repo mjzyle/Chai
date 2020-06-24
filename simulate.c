@@ -5,25 +5,29 @@
 
 int main(int argc, char** argv){
 
-    // Setup the neural network model and save before starting any simulations
-    //system("python -c \"import ai_controller; ai_controller.setup_model(); ai_controller.train_model()\"");
-
-    const int threads = 4;              // Number of parallel threads
-    const int sims = 100;               // Number of total simulations
+    const int sims = atoi(argv[1]);                 // Number of total simulations
+    const int timeout = atoi(argv[2]);              // Number of parallel threads
+    char access_key_id[100], access_key_secret[100];
+    strcpy(access_key_id, argv[3]);
+    strcpy(access_key_secret, argv[4]);
     int i = 0;
 
     // Execute simulations in parallel
     #pragma omp parallel for
-    for (i = 0; i < threads; i++) {
+    for (i = 0; i < sims; i++) {
         char func[400] = "python gameloop.py ";
-        char start[5], end[5];
+        char sim_char[5], timeout_char[5];
 
-        sprintf(start, "%d", i*sims/threads);
-        sprintf(end, "%d", i*sims/threads + sims/threads);
+        sprintf(sim_char, "%d", i);
+        sprintf(timeout_char, "%d", timeout);
 
-        strcat(func, start);
+        strcat(func, sim_char);
         strcat(func, " ");
-        strcat(func, end);
+        strcat(func, timeout_char);
+        strcat(func, " ");
+        strcat(func, access_key_id);
+        strcat(func, " ");
+        strcat(func, access_key_secret);
 
         system(func);
     }

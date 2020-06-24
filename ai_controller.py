@@ -3,9 +3,11 @@
 import math
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pandas as pd
 import data_controller as dc
+import boto3
+from boto3.dynamodb.conditions import Key
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -28,11 +30,10 @@ def setup_model():
     model.save('neural_network_model')
 
 
-def train_model(eps):
+def train_model(eps=5):
     model = keras.models.load_model('neural_network_model')
 
-    connection, cursor = dc.establish_db_connection()
-    df = pd.read_sql("SELECT * FROM chai.training_data", connection).drop(columns=['training_data_id', 'game_id'])
+    df = pd.read_csv('training_data.csv').drop(columns='Unnamed: 0')
     target = df.pop('win')
     dataset = tf.data.Dataset.from_tensor_slices((df.values, target.values))
     train_dataset = dataset.shuffle(len(df)).batch(1)

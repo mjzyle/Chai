@@ -1,4 +1,5 @@
 import gameplay_models as models
+import data_controller
 import math
 import pandas as pd
 import datetime as dt
@@ -989,7 +990,7 @@ def write_board_data(turn, current_player, board_start, board_end):
 
 
 # Play a single game through to completion
-def play_game(data_file, time_file, game, timeout):
+def play_game(game, timeout, access_key):
     white = models.Player('W')
     black = models.Player('B')
     board = setup_board()
@@ -1106,8 +1107,10 @@ def play_game(data_file, time_file, game, timeout):
 
     boards['Winner'] = winner
     boards['Turns'] = turn
-    boards.to_csv(data_file)
-    timing_data.to_csv(time_file)
+
+    #boards.to_csv(data_file)
+    #timing_data.to_csv(time_file)
+    data_controller.save_game_data(boards, game, access_key)
 
     print('Winner: ' + winner)
     print('Turns: ' + str(turn))
@@ -1119,18 +1122,17 @@ def play_game(data_file, time_file, game, timeout):
 # Run a series of games
 def run_games(start, end):
     # Determine where to start numbering new runs (relative to current number of total data points for future training)
-    root_start = 0
-    files = os.listdir('raw_data/training')
+    #root_start = 0
+    #files = os.listdir('raw_data/training')
 
-    i = 0
-    while i < len(files):
-        if files[i][-4:] != '.csv':
-            files.pop(i)
-        else:
-            i += 1
-
-    root_start = len(files)
-    
+    #i = 0
+    #while i < len(files):
+    #    if files[i][-4:] != '.csv':
+    #        files.pop(i)
+    #    else:
+    #        i += 1
+    print(start)
+    print(end)
     for i in range(start, end):
         print('Playing game ' + str(i))
-        winner, turns = play_game('raw_data/game_' + str(root_start+i) + '.csv', 'raw_data/timing/game_' + str(root_start+i) + '_timing.csv', i, 500)
+        winner, turns = play_game(i, 500)

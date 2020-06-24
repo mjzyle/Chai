@@ -1,10 +1,12 @@
 import pandas as pd
 import math
-import mysql.connector
+#import mysql.connector
 import getpass
+import boto3
 from shutil import copyfile
 from os import listdir
 from os import scandir
+from decimal import Decimal
 
 
 # Read from a directory with gameplay data, copying only records where one of the players wins into a subdirectory
@@ -328,7 +330,7 @@ def get_training_data(root):
     print('Datapoints: ' + str(len(data)))
 
 
-# Establish MySQL database connection (prompts caller for username and password)
+# Establish a local MySQL database connection (prompts caller for username and password)
 def establish_db_connection():
     connected = False
     
@@ -352,10 +354,13 @@ def establish_db_connection():
     return cnx, cursor
 
 
-# Connect to MySQL database and save data to correct table(s)
+# Connect to a local MySQL database and save data to correct table(s)
 def save_training_data(root):
-    cnx, cursor = establish_db_connection()
-    cursor.execute("USE chai")
+    #cnx, cursor = establish_db_connection()
+    #cursor.execute("USE chai")
+
+    db = boto3.resource('dynamodb', region_name='us-east-1')
+    table = db.Table('chai-training')
 
     # Setup MySQL insertion command
     query = 'INSERT INTO training_data (game_id, win, '
@@ -399,51 +404,51 @@ def save_training_data(root):
                 winner = row['Winner']
                 new_row = {}
 
-                #if winner == 'Draw':
-                #    break
+                if winner == 'Draw':
+                    break
 
                 rec_index = 0
 
                 if rec_as_winner:
                     new_row['win'] = 1
                     if winner == 'White':
-                        i = 0
-                        while i < 128:
-                            if cover[i] == 'W':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1])
-                            elif cover[i] == 'B':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                        j = 0
+                        while j < 128:
+                            if cover[j] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1])
+                            elif cover[j] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1]) * -1
                             else:
                                 new_row['cover' + str(rec_index)] = 0
 
-                            if board[i] == 'W':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
-                            elif board[i] == 'B':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            if board[j] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]])
+                            elif board[j] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]]) * -1
                             else:
                                 new_row['pieces' + str(rec_index)] = 0
 
-                            i += 2
+                            j += 2
                             rec_index += 1
 
                     elif winner == 'Black' or winner == 'Draw':
-                        i = 126
-                        while i > -1:
-                            if cover[i] == 'B':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1])
-                            elif cover[i] == 'W':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                        j = 126
+                        while j > -1:
+                            if cover[j] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1])
+                            elif cover[j] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1]) * -1
                             else:
                                 new_row['cover' + str(rec_index)] = 0
 
-                            if board[i] == 'B':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
-                            elif board[i] == 'W':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            if board[j] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]])
+                            elif board[j] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]]) * -1
                             else:
                                 new_row['pieces' + str(rec_index)] = 0
 
-                            i -= 2
+                            j -= 2
                             rec_index += 1
                     
                     else:
@@ -452,43 +457,43 @@ def save_training_data(root):
                 else:
                     new_row['win'] = 0
                     if winner == 'Black':
-                        i = 0
-                        while i < 128:
-                            if cover[i] == 'W':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1])
-                            elif cover[i] == 'B':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                        j = 0
+                        while j < 128:
+                            if cover[j] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1])
+                            elif cover[j] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1]) * -1
                             else:
                                 new_row['cover' + str(rec_index)] = 0
 
-                            if board[i] == 'W':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
-                            elif board[i] == 'B':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            if board[j] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]])
+                            elif board[j] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]]) * -1
                             else:
                                 new_row['pieces' + str(rec_index)] = 0
 
-                            i += 2
+                            j += 2
                             rec_index += 1
 
                     elif winner == 'White' or winner == 'Draw':
-                        i = 126
-                        while i > -1:
-                            if cover[i] == 'B':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1])
-                            elif cover[i] == 'W':
-                                new_row['cover' + str(rec_index)] = int(cover[i+1]) * -1
+                        j = 126
+                        while j > -1:
+                            if cover[j] == 'B':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1])
+                            elif cover[j] == 'W':
+                                new_row['cover' + str(rec_index)] = int(cover[j+1]) * -1
                             else:
                                 new_row['cover' + str(rec_index)] = 0
 
-                            if board[i] == 'B':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]])
-                            elif board[i] == 'W':
-                                new_row['pieces' + str(rec_index)] = int(points[board[i+1]]) * -1
+                            if board[j] == 'B':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]])
+                            elif board[j] == 'W':
+                                new_row['pieces' + str(rec_index)] = int(points[board[j+1]]) * -1
                             else:
                                 new_row['pieces' + str(rec_index)] = 0
 
-                            i -= 2
+                            j -= 2
                             rec_index += 1
 
                     else:
@@ -502,25 +507,73 @@ def save_training_data(root):
                 temp_query = query
                 temp_query += str(count) + ', ' + str(new_row['win']) + ', '
 
-                for i in range(0, 64):
-                    temp_query += str(new_row['pieces' + str(i)]) + ', '
-                for i in range(0, 63):
-                    temp_query += str(new_row['cover' + str(i)]) + ','
+                for j in range(0, 64):
+                    temp_query += str(new_row['pieces' + str(j)]) + ', '
+                for j in range(0, 63):
+                    temp_query += str(new_row['cover' + str(j)]) + ','
 
                 temp_query += str(new_row['cover63']) + ');'
 
                 # Commit data to database
-                cursor.execute(temp_query)
+                #cursor.execute(temp_query)
+                
+                temp = {
+                    'TrainingID' : int(count*100000 + index*10 + i), 
+                    'GameID' : int(count),
+                    'Win' : new_row['win']
+                } 
+
+                for j in range(0, 64):
+                    temp['pieces' + str(j)] = new_row['pieces' + str(j)]
+                for j in range(0, 64):
+                    temp['cover' + str(j)] = new_row['cover' + str(j)]
+
+                table.put_item(Item=temp)
+
                 rec_as_winner = not rec_as_winner
 
-            #if winner == 'Draw':
+            if winner == 'Draw':
                 #games_used -= 1
-                #break
+                break
 
-        cnx.commit()
+        #cnx.commit()
         count += 1
 
-    cnx.close()
+    #cnx.close()
+
+
+# Save game data to AWS DynamoDB table (chai-games)
+def save_game_data(df, game_num, access_key):
+    db = boto3.resource('dynamodb', region_name='us-east-1', aws_access_key_id=access_key[0], aws_secret_access_key=access_key[1])
+    table = db.Table('chai-moves')
+
+    for index, row in df.iterrows():
+        table.put_item(
+            Item={
+                'MoveID' : int(10000*game_num + index),
+                'GameID' : int(game_num),
+                'Winner' : row['Winner'],
+                'TotalTurns' : int(row['Turns']),             
+                'Turn' : int(row['Turn']),
+                'StartingBoard' : row['Starting Board'],
+                'EndingBoard' : row['Ending Board'],
+                'StartingCoverage' : row['Starting Coverage'],
+                'EndingCoverage' : row['Ending Coverage'],
+                'InCheck' : row['In Check'],
+                'MovingPlayer' : row['Moving Player'],
+                'PlayStyle' : row['Style'],
+                'Timestamp' : row['Time'].isoformat(),
+                'MoveEffectiveness' : Decimal(row['Move Effectiveness Score']),
+                'BlackCoverScore' : int(row['Black Coverage Score']),
+                'BlackPieceScore' : int(row['Black Piece Score']),
+                'BlackPieceCount' : int(row['Black Pieces']),
+                'WhiteCoverScore' : int(row['White Coverage Score']),
+                'WhitePieceScore' : int(row['White Piece Score']),
+                'WhitePieceCount' : int(row['White Pieces'])
+            }
+        )
+
+    print('Write successful!')
 
 
 # Count the number of training datapoints in CSV files
